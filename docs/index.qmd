@@ -1,0 +1,198 @@
+---
+title: "Tourism EDA - Zürich"
+editor: visual
+title-block-banner: "#0095C8" #chosen for the university of lausanne
+toc: true
+toc-location: right
+format: 
+  html:
+    number-sections: true
+    html-math-method: katex
+    self-contained: true
+    code_folding: true
+  # pdf: default # use this if you want to render pdfs instead
+---
+
+```{r, echo = FALSE, message = FALSE}
+# loading all the necessary packages
+library(here)
+source(here("docs/setup.R"))
+library(fpp3)
+library(fable)
+library(tsibble)
+library(dplyr)
+library(lubridate)
+library(plotly)
+```
+
+# Tourism EDA - Zurich
+
+## Univariable analysis
+
+### Load data
+
+```{r}
+# Load the data in folder data named Dataset_tourism.xlsx)
+tourism_data <- readxl::read_xlsx(here("data/Dataset_tourism.xlsx"))
+```
+
+### Cleaning
+
+```{r}
+#removing value 'Herkunftsland - Total' in column 'Herkunftsland' as it is just the total
+tourism_data <- tourism_data %>% filter(Herkunftsland != "Herkunftsland - Total")
+#print unique values in month column
+unique(tourism_data$Monat)
+# change ' [1] "Januar"    "Februar"   "März"      "April"     "Mai"       "Juni"      "Juli"      "August" "September" "Oktober"   "November"  "Dezember" into english month'
+tourism_data$Monat <- tourism_data$Monat %>% recode_factor(
+  "Januar" = "January",
+  "Februar" = "February",
+  "März" = "March",
+  "April" = "April",
+  "Mai" = "May",
+  "Juni" = "June",
+  "Juli" = "July",
+  "August" = "August",
+  "September" = "September",
+  "Oktober" = "October",
+  "November" = "November",
+  "Dezember" = "December"
+)
+#add date type column for plotting purposes
+tourism_data <- tourism_data %>% mutate(Date = dmy(paste("01", Monat, Jahr)))
+#check for NAN
+sum(is.na(tourism_data))
+#analyse the NAN values, where are they
+(tourism_data %>% filter(is.na(value)))
+head(tourism_data)
+```
+
+#### Deal with NAN
+
+##### Impute missing values ARIMA
+
+If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
+
+```{r}
+# #Creating a tsibble with missing values
+# data <- tourism_data_zurich_philippines %>%
+#   as_tsibble(key = c(Kanton, Herkunftsland, Monat, Jahr)) %>%
+#   select(Date, value) %>%
+#   fill_gaps()
+# 
+# # Fit an ARIMA model to data with missing values
+# model_fit <- data %>%
+#   model(ARIMA(value))
+# 
+# # Interpolate missing values using the fitted ARIMA model
+# filled_data <- model_fit %>%
+#   interpolate(data)
+# 
+# # Print the data with filled in missing values
+# print(filled_data)
+```
+
+### Country visiting zurich
+
+```{r}
+#filter column 'Kanton' for Zurich
+tourism_data_zurich <- tourism_data %>% filter(Kanton == "Zürich")
+#check for NAN
+sum(is.na(tourism_data_zurich))
+#analyse the NAN values, where are they
+(tourism_data_zurich %>% filter(is.na(value)))
+head(tourism_data_zurich)
+```
+
+#### Plot time series
+
+```{r}
+# Preparing the data
+#removing value 'Schweiz' in column 'Herkunftsland' as it is just the whole of Switzerland
+tourism_data_zurich <- tourism_data_zurich %>% filter(Herkunftsland != "Schweiz")
+data <- tourism_data_zurich %>%
+  filter(!is.na(value)) %>%  # Removing rows with NA values in the 'value' column
+  mutate(Monat = month(Date, label = TRUE, abbr = TRUE),  # Extract month from Date
+         Jahr = year(Date)) %>%  # Extract year from Date
+  group_by(Herkunftsland, Date) %>%  # Group by country and date
+  summarise(Trips = sum(value), .groups = 'drop')  # Summing up trips for each country per date
+
+# Plotting
+ggplot(data, aes(x = Date, y = Trips, group = Herkunftsland)) +
+  geom_line(aes(color = Herkunftsland == "Philippinen"), show.legend = FALSE) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "grey")) +
+  labs(title = "Number of Trips from Each Country to Zurich",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal() +
+  guides(color = guide_legend(title = "Country", override.aes = list(color = c("red"))))
+
+```
+
+```{r}
+# Static ggplot
+p <- ggplot(data, aes(x = Date, y = Trips, group = Herkunftsland,
+                      color = Herkunftsland == "Philippinen",
+                      text = paste("Country:", Herkunftsland, "<br>Trips:", Trips))) +  # Added text for tooltip
+  geom_line(show.legend = FALSE) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "grey")) +
+  labs(title = "Number of Trips from Each Country to Zurich",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal()
+
+# Convert to an interactive plotly object
+interactive_plot <- ggplotly(p, tooltip = "text")
+
+# Adjust plotly settings 
+interactive_plot <- interactive_plot %>%
+  layout(margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
+         legend = list(orientation = "h", x = 0, xanchor = "left", y = -0.2))  # Adjust legend position
+
+# Display the interactive plot
+interactive_plot
+```
+
+### Filter data for zurich and philipines
+
+#### Pattern
+
+##### Decompose
+
+```{r}
+#filter visiting country philipines
+tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
+head(tourism_data_zurich_philippines)
+
+# Convert data to a time series object
+tourism_ts <- tourism_data_zurich_philippines %>%
+  arrange(Date) %>%
+  # Ensure data is complete and monthly
+  complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
+  replace_na(list(value = 0)) %>%  # Replace NA values if there are any
+  # Create a time series object
+  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
+
+# Decompose the time series
+decomposed <- decompose(tourism_ts)
+
+# Plot the decomposed components
+plot(decomposed)
+```
+
+##### Seasonality
+
+```{r}
+# One chart
+
+```
+
+```{r}
+# several chart per month
+```
+
+## Tourism EDA - Zurich with Philipine visitors
+
+```{r}
+#filter tourism_data for Philipine visitors in Zurich and autoplot the time series with phili
+```
