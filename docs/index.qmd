@@ -185,13 +185,12 @@ plot(decomposed)
 ```
 
 #### Seasonality
-
 ```{r}
-# One chart
-
+# Plot the seasonality in one chart 
+ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE)
 ```
 
 ```{r}
-# several chart per month
-
+# several chart per month to see the seasonality
+ggsubseriesplot(tourism_ts)
 ```

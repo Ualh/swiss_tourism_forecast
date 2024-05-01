@@ -5,3 +5,6 @@ data/.DS_Store
 .Ruserdata
 .Rprofile
 .Here
+course_slides/
+.here.txt
+r_project.Rproj
