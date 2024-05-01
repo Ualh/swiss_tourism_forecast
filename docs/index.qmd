@@ -70,6 +70,17 @@ sum(is.na(tourism_data))
 reactable::reactable(head(tourism_data, 1000))
 ```
 
+### Tourism Data - Vaud
+
+```{r}
+# Filter by canton Vaud 
+tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
+#check for NAN
+sum(is.na(tourism_vaud))
+#show the data in a table using reactable
+reactable::reactable(head(tourism_vaud, 20))
+```
+
 ### Tourism Data - Zurich
 
 ```{r Tourism Zurich}
@@ -118,6 +129,65 @@ If the missing values are random or if excluding them would result in a loss of 
 # # Print the data with filled in missing values
 # print(filled_data)
 ```
+
+# EDA - Vaud
+## Visitors from different countries in Vaud
+```{r vaud all}
+plot_vaud <- tourism_vaud %>% 
+  filter(Herkunftsland != 'Herkunftsland - Total') %>%
+  ggplot(aes(x = Date, y = value, group = Herkunftsland, color = Herkunftsland,
+                      text = paste("Country:", Herkunftsland, "Trips:", value))) +  # Added text for tooltip
+  geom_line(show.legend = FALSE) + 
+  labs(title = "Number of visitors from Each Country to Vaud",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal()
+
+# Convert to an interactive plotly object
+interactive_plot <- ggplotly(plot_vaud, tooltip = "text")
+
+# Adjust plotly settings 
+interactive_plot <- interactive_plot %>%
+  layout(margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
+         legend = list(orientation = "h", x = 0, xanchor = "left", y = -0.2))  # Adjust legend position
+
+# Display the interactive plot
+interactive_plot
+```
+
+According to the graph the most tourist in canton Vaud are Swiss and France.
+
+
+Graphical view of total number of tourists in canton Vaud
+
+```{r vaud aggregated}
+tourism_vaud_total <- tourism_vaud %>%
+  filter(Herkunftsland == 'Herkunftsland - Total') %>%
+  select(-c(Herkunftsland, Kanton, Monat, Jahr))
+tourism_vaud_total%>%
+  ggplot(aes(x = Date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Number of tourists", title = "Total number of tourists in canton Vaud") + 
+  theme_minimal()
+```
+
+### Decomposition
+```{r decomposition}
+# Convert data to a time series object
+vaud_ts <- tourism_vaud_total %>%
+  arrange(Date) %>%
+  # Ensure data is complete and monthly
+  complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
+  replace_na(list(value = 0)) %>%  # Replace NA values if there are any
+  # Create a time series object
+  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
+
+# Decompose the time series
+vaud_ts %>% decompose() %>% plot()
+```
+We see clear seasonality with picks in summer and dip in January.
+
+We saw a big drop in March 2020 due to the global coronavirus pandemic.
 
 # EDA - Zurich
 ## Zurich and All visiting countries
@@ -203,6 +273,26 @@ ggsubseriesplot(tourism_ts)
 
 This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, colinearity, covariates, special events, etc. Remember the following steps: (a) Aggregation choice for hierarchical time series (b) Model building (c) Model selection
 
+## Total number of visitors in Vaud
+### ETS model 
+```{r}
+ets_vaud <- ets(vaud_ts, model = "AAA")
+forecast_ets_vaud <- forecast(ets_vaud, h = 24) %>% plot(main = "Forecast of visitors in Vaud", xlab = "Date", ylab = "Number of visitors")
+```
+
+### ARIMA
+```{r}
+arima_vaud <- auto.arima(vaud_ts, seasonal = TRUE)
+
+# Generate forecasts for the next 2 years (24 months)
+forecast_arima_vaud <- forecast(arima_vaud, h = 24)
+
+# Plot the forecast
+plot(forecast_arima_vaud, main = "ARIMA Forecast for Vaud Tourism", xlab = "Date", ylab = "Number of Tourists")
+```
+
+Questions: 
+Forecast for each country or general forecast?
 ## Outliers
 
 ```{r}
