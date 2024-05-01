@@ -33,9 +33,26 @@ library(plotly)
 #library(anomalize)
 ```
 
+# Exploration & Visualization
+
+## Objectives 
+
+The main objectives of this project is to predict :
+
+-   The overnight stays of the visitors in Vaud, from October 2023 until December 2024.
+
+-   The overnight satys of visitors from Philippines to Zürich, from October 2023 until December 2024.
+
 # DATA
-## Cleaning
+
+## Cleaning & Wrangling 
+
 ### Tourism Data - All
+
+The dataset contains information about the overnights stays by tourists in the various Swiss cantons. It indicates the tourist's country of origin, the canton of stay, the month, the year and the total number of overnights stays.
+
+As the dataset provided is in German, we have translated the data in English to make it more intuitive and understandable for everyone. Then, we created a new 'Date' column, year-month-day, which corresponds to the correct format to be able to make predictions.
+
 
 ```{r Tourism ALL}
 # Load the data in folder data named Dataset_tourism.xlsx)
@@ -83,6 +100,8 @@ reactable::reactable(head(tourism_vaud, 20))
 
 ### Tourism Data - Zurich
 
+We filtered the 'Canton' column to keep only the canton of Zürich.
+
 ```{r Tourism Zurich}
 #filter column 'Kanton' for Zurich
 tourism_data_zurich <- tourism_data %>% filter(Kanton == "Zürich")
@@ -96,6 +115,8 @@ reactable::reactable(head(tourism_data_zurich, 1000))
 ```
 
 ### Tourism Data - Zurich and Philipines
+
+Same as above, but we're also filtering the country of origin, keeping only 'Philippinen' as that is what we're aiming for.
 
 ```{r Tourism Zurich and Philipines}
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
@@ -190,6 +211,7 @@ We see clear seasonality with picks in summer and dip in January.
 We saw a big drop in March 2020 due to the global coronavirus pandemic.
 
 # EDA - Zurich
+
 ## Zurich and All visiting countries
 ```{r}
 # Preparing the data
@@ -224,6 +246,13 @@ interactive_plot
 ```
 
 ## Zurich and Philipines Visitors
+This graph shows changes in the number of overnight stays between January 2005 and September 2023.
+
+Germans are the most frequent visitors to Zurich. From 2022 onwards, the United States will be the first country to visit Zurich. The red curve representing the Philippines is flat and very close to 0 (little volatility), indicating a considerably lower number of trips from this country to Zurich over the entire period observed.
+
+A drastic drop can be observed. This could be due to the COVID-19 pandemic, which had a significant impact on international travel. At first glance, we can observe regular seasonal peaks for most countries, suggesting the presence of seasonality in tourism to the canton of Zurich.
+
+## Zurich and Philippinens Visitors
 
 ```{r}
 # use tourism_data_zurich_philippines data to plot the values in y axis and Date in x axis
@@ -235,6 +264,14 @@ p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
   theme_minimal()
 p
 ```
+
+-   Slight seasonality
+
+-   General upward trend in the number of nights spent before 2020.
+
+-   Very sharp fall in 2020 - covid
+
+-   General upward trend after the fall
 
 ### Pattern
 
