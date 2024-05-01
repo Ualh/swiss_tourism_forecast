@@ -51,9 +51,8 @@ purrr::walk(packages, function(pkg) {
 ######################################################
 ## The following sets a few option for nice reports ##
 ######################################################
-# You can use this if you wanted to change the rendered output
 
-#general options
+# general options
 options(
   digits = 3,
   str = strOptions(strict.width = "cut"),
@@ -62,23 +61,24 @@ options(
   cli.unicode = FALSE
 )
 
-# ggplot options for the report
-theme_set(theme_bw())
+# ggplot options
+theme_set(theme_light())
 
-#knitr options  # nolint
-opts_chunk$set(
+# knitr options
+knitr::opts_chunk$set(
   comment = "#>",
   collapse = TRUE,
-  # cache = TRUE, # nolint: commented_code_linter.
+  # cache = TRUE,
   fig.retina = 0.8, # figures are either vectors or 300 dpi diagrams
   dpi = 300,
   out.width = "70%",
   fig.align = "center",
   fig.width = 6,
+  fig.height = 4,
   fig.asp = 0.618,
   fig.show = "hold",
   message = FALSE,
-  warning = FALSE, # Suppress warnings
-  echo = TRUE, #FALSE for not showing code,
-  collapse = TRUE
+  echo = TRUE
 )
+
+
