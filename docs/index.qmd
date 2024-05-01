@@ -263,24 +263,23 @@ plot
 ```
 
 ## ARIMA
-
+Do we need to differentiate the data ?
 ```{r}
-# differentiate the data
-tourism_ts <- tourism_ts %>% model(difference = difference(value))
-# Fit an ARIMA model
-fit <- tourism_ts %>%
-  model(ARIMA = ARIMA(value))
-# Forecast the next 6 periods
-forecast <- fit %>%
-  forecast(h = 6)
-# Plot the forecasts along with the historical data
-plot <- forecast %>%
-  autoplot(tourism_ts)
-plot
+# # differentiate the data
+# tourism_ts <- tourism_ts %>% model(difference = difference(value))
+# # Fit an ARIMA model
+# fit <- tourism_ts %>%
+#   model(ARIMA = ARIMA(value))
+# # Forecast the next 6 periods
+# forecast <- fit %>%
+#   forecast(h = 6)
+# # Plot the forecasts along with the historical data
+# plot <- forecast %>%
+#   autoplot(tourism_ts)
+# plot
 ```
 
 ## Combining Forecasts
-
 ```{r}
 # Combine the forecasts from the ETS and ARIMA models
 combined_forecast <- fit %>%
