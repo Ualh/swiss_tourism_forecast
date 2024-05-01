@@ -20,7 +20,6 @@ abstract: |
   The following Forecasting project focuses on applying forecasting techniques to predict tourism trends in Zurich. This analysis aims to harness the power of historical data combined with forecasting algorithms to provide actionable insights into future tourism patterns. We engage in comprehensive data preparation, explore various predictive models, and conduct a detailed evaluation of their forecasting accuracy. The project encapsulates the challenge of turning complex data into understandable and strategic information, crucial for effective decision-making in Zurich's tourism sector.
 ---
 
-
 ```{r loading libraries, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
 # loading all the necessary packages
 library(here)
@@ -31,11 +30,13 @@ library(tsibble)
 library(dplyr)
 library(lubridate)
 library(plotly)
+#library(anomalize)
 ```
 
 # DATA
 ## Cleaning
 ### Tourism Data - All
+
 ```{r Tourism ALL}
 # Load the data in folder data named Dataset_tourism.xlsx)
 tourism_data <- readxl::read_xlsx(here("data/Dataset_tourism.xlsx"))
@@ -70,6 +71,7 @@ reactable::reactable(head(tourism_data, 1000))
 ```
 
 ### Tourism Data - Zurich
+
 ```{r Tourism Zurich}
 #filter column 'Kanton' for Zurich
 tourism_data_zurich <- tourism_data %>% filter(Kanton == "Zürich")
@@ -119,11 +121,9 @@ If the missing values are random or if excluding them would result in a loss of 
 
 # EDA - Zurich
 ## Zurich and All visiting countries
-
 ```{r}
 # Preparing the data
 #removing value 'Schweiz' in column 'Herkunftsland' as it is just the whole of Switzerland
-tourism_data_zurich <- tourism_data_zurich %>% filter(Herkunftsland != "Schweiz")
 data <- tourism_data_zurich %>%
   filter(!is.na(value)) %>%  # Removing rows with NA values in the 'value' column
   mutate(Monat = month(Date, label = TRUE, abbr = TRUE),  # Extract month from Date
@@ -154,6 +154,7 @@ interactive_plot
 ```
 
 ## Zurich and Philipines Visitors
+
 ```{r}
 # use tourism_data_zurich_philippines data to plot the values in y axis and Date in x axis
 p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
@@ -166,7 +167,9 @@ p
 ```
 
 ### Pattern
+
 #### Decompose
+
 ```{r}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines %>%
@@ -185,6 +188,7 @@ plot(decomposed)
 ```
 
 #### Seasonality
+
 ```{r}
 # Plot the seasonality in one chart 
 ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE)
@@ -193,4 +197,96 @@ ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE)
 ```{r}
 # several chart per month to see the seasonality
 ggsubseriesplot(tourism_ts)
+```
+
+# MODELLING
+
+This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, colinearity, covariates, special events, etc. Remember the following steps: (a) Aggregation choice for hierarchical time series (b) Model building (c) Model selection
+
+## Outliers
+
+```{r}
+
+```
+
+## Correlation
+
+```{r}
+
+```
+
+## Special Event
+### Covid impact
+
+![](images/clipboard-4239087395.png)
+
+How to deal with this blackswan event ?
+
+-   Incorporating Dummy Variables Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data.
+-   Replacing covid values
+
+```{r}
+# analyse the impact of covid on the data from december 2019 to 2023
+covid_impact <- tourism_data_zurich_philippines %>%
+  filter(Date >= "2019-11-01" & Date <= "2023-01-01") %>%
+  ggplot(aes(x = Date, y = value)) +
+  geom_line() +
+  labs(title = "Impact of Covid on Tourism from Philipines to Zurich",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal()
+covid_impact
+```
+
+How to deal withc
+
+## Exponential Smoothing
+### Model ETS 1
+
+```{r}
+#convert tourism_ts to tsibble
+tourism_ts <- tourism_ts %>% as_tsibble()
+# Fit an ETS model
+# Adjusting the model parameters according to the characteristics of the data
+# Here "A" means additive error, "N" means no trend, and "N" means no seasonality
+# change these if needed
+fit <- tourism_ts %>%
+  model(ETS = ETS(value ~ error("A") + trend("A") + season("A")))
+# Forecast the next 6 periods
+forecast <- fit %>%
+  forecast(h = 6)
+# Plot the forecasts along with the historical data
+plot <- forecast %>%
+  autoplot(tourism_ts)
+
+plot
+```
+
+## ARIMA
+
+```{r}
+# differentiate the data
+tourism_ts <- tourism_ts %>% model(difference = difference(value))
+# Fit an ARIMA model
+fit <- tourism_ts %>%
+  model(ARIMA = ARIMA(value))
+# Forecast the next 6 periods
+forecast <- fit %>%
+  forecast(h = 6)
+# Plot the forecasts along with the historical data
+plot <- forecast %>%
+  autoplot(tourism_ts)
+plot
+```
+
+## Combining Forecasts
+
+```{r}
+# Combine the forecasts from the ETS and ARIMA models
+combined_forecast <- fit %>%
+  forecast(h = 6, method = "comb")
+# Plot the combined forecasts along with the historical data
+plot <- combined_forecast %>%
+  autoplot(tourism_ts)
+plot
 ```
