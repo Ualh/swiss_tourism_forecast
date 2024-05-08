@@ -101,7 +101,7 @@ reactable::reactable(head(tourism_vaud, 20))
 
 ### Tourism Data - Zurich
 
-We filtered the 'Canton' column to keep only the canton of Zürich.
+We filtered the 'Canton' column to keep only the canton of Zurich.
 
 ```{r Tourism Zurich}
 #filter column 'Kanton' for Zurich
@@ -127,7 +127,7 @@ reactable::reactable(tourism_data_zurich_philippines)
 
 ### Deal with NAN
 
-We have none in the data filtered with zurich and philippines, but if we would have we would :
+We have none in the data filtered with Zurich and Philippines, but if we would have we would :
 
 #### Impute missing values ARIMA
 
@@ -254,15 +254,17 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-## Zurich and Philipines Visitors
+This graph shows changes in the number of overnight stays from January 2005 to September 2023.
 
-This graph shows changes in the number of overnight stays between January 2005 and September 2023.
+The red curve represents the Philippines. It is flat and shows a considerably small number of trips from this country to Zurich over the period. The grey curves represent other countries visiting the canton of Zurich. Swiss people are the most frequent visitors, followed by Germany and the United States.
 
-Germans are the most frequent visitors to Zurich. From 2022 onwards, the United States will be the first country to visit Zurich. The red curve representing the Philippines is flat and very close to 0 (little volatility), indicating a considerably lower number of trips from this country to Zurich over the entire period observed.
+A drastic drop can be observed. This could be due to the COVID-19 pandemic, which had a significant impact on international travel and thus on tourism industry worldwide.
 
-A drastic drop can be observed. This could be due to the COVID-19 pandemic, which had a significant impact on international travel. At first glance, we can observe regular seasonal peaks for most countries, suggesting the presence of seasonality in tourism to the canton of Zurich.
+At first glance, we can observe regular seasonal peaks for most countries, suggesting the presence of seasonality in tourism to the canton of Zurich.
 
 ## Zurich and Philippinens Visitors
+
+This graph shows only visitors from the Philippines, as this is the country of interest in our analysis.
 
 ```{r}
 # use tourism_data_zurich_philippines data to plot the values in y axis and Date in x axis
@@ -285,7 +287,13 @@ p
 
 ### Pattern
 
-#### Decompose
+#### Decomposition
+
+We apply a standard decomposition of the number of overnight stays in Zurich for the Philippines to reveal seasonal trends, long-term trends and irregular components of the data.
+
+Splitting the times series into several components allows us to understand how the different components contribute to the variations observed in Swiss tourism data.
+
+We chose to split the times series into monthly data.
 
 ```{r}
 # Convert data to a time series object
@@ -321,6 +329,7 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 ```
 
 #### Trend
+
 ```{r}
 # Show the trend using moving average
 # tourism_data_zurich_philippines %>%
@@ -341,6 +350,7 @@ This part is about building on your knowledge of time series techniques to model
 (c) Model selection
 
 ## Total number of visitors in Vaud
+
 ### Outliers, Correlation, Colinearity, Covariates, Special Events ?
 
 Questions ?
@@ -372,7 +382,46 @@ Question: Forecast for each country or general forecast?
 
 ## Zurich and Philipines
 ### Forecast without dealing with Covid
-#### Naive Forecast
+
+
+### Outliers, Correlation, Colinearity, Covariates, Special Events ?
+
+### Special Event
+
+#### Covid impact
+
+![](images/clipboard-4239087395.png)
+
+##### How philipines dealt with it
+
+In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
+
+-   Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus.
+-   Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace.
+-   Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings.
+-   Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis.
+-   Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1.
+-   Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
+
+As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1
+
+Question : How to deal with this blackswan event ? - Incorporating Dummy Variables Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data. - Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
+
+```{r}
+# analyse the impact of covid on the data from december 2019 to 2023
+covid_impact <- tourism_data_zurich_philippines %>%
+  filter(Date >= "2019-11-01" & Date <= "2023-01-01") %>%
+  ggplot(aes(x = Date, y = value)) +
+  geom_line() +
+  labs(title = "Impact of Covid on Tourism from Philipines to Zurich",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal()
+covid_impact
+```
+
+### Naive Forecast
+
 ```{r}
 #convert tourism_ts to tsibble
 tourism_ts <- tourism_ts %>% as_tsibble()
@@ -394,7 +443,9 @@ plot
 #### Exponential Smoothing
 ##### Model ETS 1
 
-- Why additive errors ? Because the variance of the errors is constant over time no ?
+
+
+-   Why additive errors ? Because the variance of the errors is constant over time no ?
 
 ```{r}
 # Fit an ETS model
@@ -414,11 +465,10 @@ plot <- forecast %>%
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
 ```
+
 Clearly see here that the confidence interval is too big, almost like a naive forecast
 
-Why trend dp and seaso M ?
-- Trend is present so A
-- Seasonality is present and growing over time so Multiplicative was chosen 
+Why trend dp and seaso M ? - Trend is present so A - Seasonality is present and growing over time so Multiplicative was chosen
 
 ```{r}
 # comparing several model
@@ -441,6 +491,7 @@ plot
 ```
 
 ###### Thus Chosen Model :
+
 ```{r}
 fit <- tourism_ts %>%
   model(ETS_M_seaso = ETS(value ~ error("A") + trend("Ad") + season("M"))) #multiplicative seasonality)
@@ -478,9 +529,11 @@ plot_arima <- forecast_arima %>%
   guides(colour = guide_legend(title = "Forecast"))
 plot_arima
 ```
+
 Ugly forecast, confidence interval is too big
 
-##### Diagnostic
+#### Diagnostic
+
 ```{r}
 # Check the diagnostics of the ARIMA model
 fit_arima %>% report()
@@ -493,7 +546,6 @@ autoplot(residuals(fit_arima))
 fit_updated <- auto.arima(tourism_ts, seasonal = TRUE, stepwise = FALSE, approximation = FALSE)
 summary(fit_updated)
 ```
-
 
 ### Forecast but dealing with Covid now
 #### Special Event- Covid impact
@@ -536,8 +588,11 @@ Introduce dummy variables into your forecasting models to account for the impact
 - If we use the ARIMA model, we can use covariates to account for the impact of COVID-19. By including a dummy variable that captures the effect of the pandemic, we can adjust the forecasts to reflect the changes in the data due to COVID-19.
 
 
+
 # Model Selection
+
 Use Information Criteria for Model Comparison: Evaluate models based on criteria such as AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
+
 ```{r}
 
 ```
