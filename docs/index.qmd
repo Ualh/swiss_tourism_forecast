@@ -201,11 +201,13 @@ tourism_vaud_total%>%
 # Convert data to a time series object
 vaud_ts <- tourism_vaud_total %>%
   arrange(Date) %>%
+   # Filtre pour enlever les valeurs NA dans 'Date'
+  filter(!is.na(Date)) %>%
   # Ensure data is complete and monthly
-  complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
+  complete(Date = seq.Date(min(Date, na.rm = TRUE), max(Date, na.rm = TRUE), by = "month")) %>%
   replace_na(list(value = 0)) %>%  # Replace NA values if there are any
   # Create a time series object
-  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
+  with(ts(value, frequency = 12, start = decimal_date(min(Date, na.rm = TRUE))))
 
 # Decompose the time series
 vaud_ts %>% decompose() %>% plot()
