@@ -245,8 +245,9 @@ interactive_plot <- ggplotly(p, tooltip = "text")
 # Adjust plotly settings 
 interactive_plot <- interactive_plot %>%
   layout(margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
-         legend = list(orientation = "h", x = 0, xanchor = "left", y = -0.2))  # Adjust legend position
-
+         legend = list(orientation = "h", x = 0, xanchor = "left", y = -0.2),
+         width = 600,
+         height = 400)  # Adjust legend position
 # Display the interactive plot
 interactive_plot
 ```
