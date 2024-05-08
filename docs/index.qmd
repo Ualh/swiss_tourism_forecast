@@ -30,6 +30,7 @@ library(tsibble)
 library(dplyr)
 library(lubridate)
 library(plotly)
+library(reactable)
 #library(anomalize)
 ```
 
@@ -47,7 +48,7 @@ The main objectives of this project is to predict :
 
 ## Cleaning & Wrangling
 
-### Tourism Data - All
+### Tourism Data - General Overview
 
 The dataset contains information about the overnights stays by tourists in the various Swiss cantons. It indicates the tourist's country of origin, the canton of stay, the month, the year and the total number of overnights stays.
 
@@ -85,7 +86,8 @@ sum(is.na(tourism_data_no_total))
 #analyse the NAN values, where are they
 (tourism_data_no_total %>% filter(is.na(value)))
 #show data using reactable only showing the first 100 rows
-reactable::reactable(head(tourism_data_no_total, 1000))
+reactable::reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
+
 ```
 
 ### Tourism Data - Vaud
@@ -127,9 +129,8 @@ reactable::reactable(tourism_data_zurich_philippines)
 
 ### Deal with NAN
 
-We have none in the data filtered with Zurich and Philippines, but if we would have we would :
-
-#### Impute missing values ARIMA
+**A supprimer ou juste mentionner quon a pas de NAN**
+We have none in the data filtered with Zurich and Philippines, but if we would have we would : Impute missing values ARIMA
 
 If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
 
@@ -330,16 +331,7 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 
 #### Trend
 
-```{r}
-# Show the trend using moving average
-# tourism_data_zurich_philippines %>%
-#   autoplot(value) +
-#   autolayer(ma(value, 12), series = "12-month moving average") +
-#   labs(title = "Trend in the number of tourists from Philipines to Zurich",
-#        x = "Date",
-#        y = "Number of tourists") +
-#   theme_minimal()
-```
+Juste ecrire text sur le upward trend qu'on a vu dans la decomposition
 
 # MODELLING
 
@@ -382,45 +374,7 @@ Question: Forecast for each country or general forecast?
 
 ## Zurich and Philipines
 ### Forecast without dealing with Covid
-
-
-### Outliers, Correlation, Colinearity, Covariates, Special Events ?
-
-### Special Event
-
-#### Covid impact
-
-![](images/clipboard-4239087395.png)
-
-##### How philipines dealt with it
-
-In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
-
--   Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus.
--   Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace.
--   Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings.
--   Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis.
--   Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1.
--   Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
-
-As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1
-
-Question : How to deal with this blackswan event ? - Incorporating Dummy Variables Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data. - Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
-
-```{r}
-# analyse the impact of covid on the data from december 2019 to 2023
-covid_impact <- tourism_data_zurich_philippines %>%
-  filter(Date >= "2019-11-01" & Date <= "2023-01-01") %>%
-  ggplot(aes(x = Date, y = value)) +
-  geom_line() +
-  labs(title = "Impact of Covid on Tourism from Philipines to Zurich",
-       x = "Date",
-       y = "Number of Trips") +
-  theme_minimal()
-covid_impact
-```
-
-### Naive Forecast
+#### Naive Forecast
 
 ```{r}
 #convert tourism_ts to tsibble
@@ -441,9 +395,6 @@ plot
 ```
 
 #### Exponential Smoothing
-##### Model ETS 1
-
-
 
 -   Why additive errors ? Because the variance of the errors is constant over time no ?
 
@@ -490,7 +441,7 @@ plot <- forecast %>%
 plot
 ```
 
-###### Thus Chosen Model :
+##### Thus Chosen Model :
 
 ```{r}
 fit <- tourism_ts %>%
@@ -536,9 +487,11 @@ Ugly forecast, confidence interval is too big
 
 ```{r}
 # Check the diagnostics of the ARIMA model
-fit_arima %>% report()
+report <- fit_arima %>% report()
 
 autoplot(residuals(fit_arima))
+
+#show report in html
 ```
 
 ```{r}
@@ -550,7 +503,7 @@ summary(fit_updated)
 ### Forecast but dealing with Covid now
 #### Special Event- Covid impact
 
-EXplanation
+Explanation
 ![](images/clipboard-4239087395.png)
 
 ##### How philipines dealt with it
@@ -570,16 +523,145 @@ As for travel, the Philippines continues to navigate the balance between safety 
 ******
 
 Question : How to deal with this blackswan event ?
+
 ##### Covariates
+TEXT A PAUFINER
 Covariate Adjustment Adjust your forecasts to account for the impact of COVID-19 by including covariates that capture the effects of the pandemic. These covariates can be used to adjust the forecasts based on the observed changes in the data due to COVID-19. For example, you can include a covariate that captures the effect of lockdowns or travel restrictions on tourism data. Scenario Analysis Conduct scenario analysis to explore the potential impact of different COVID-19 scenarios on your forecasts. By considering a range of possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity Analysis Evaluate the sensitivity of your forecasts to changes in key assumptions or parameters. By conducting sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
+###### Data Integration
+
+The Oxford COVID-19 Government Response Tracker (OxCGRT) provides valuable data on government responses to the COVID-19 pandemic, including a Stringency Index that quantifies the severity of lockdown measures. Let me provide more details about this index:
+
+*Stringency Index:*
+The Stringency Index is a composite measure that evaluates the strictness of government policies related to COVID-19. It calculates a score based on nine key response metrics:
+- School closures
+- Workplace closures
+- Cancellation of public events
+- Restrictions on public gatherings
+- Closures of public transport
+- Stay-at-home requirements
+- Public information campaigns
+- Restrictions on internal movements
+- International travel controls
+Each metric is assigned a value between 0 and 100, with a higher score indicating a stricter response. The overall Stringency Index is the mean score of these nine metrics. If policies vary at the subnational level, the index reflects the strictest sub-region’s response level.
+Importantly, the Stringency Index records the strictness of government policies but does not measure or imply the appropriateness or effectiveness of a country’s response. A higher score does not necessarily mean that a country’s response is better than others lower on the index.
+
+source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
+
 ```{r}
+# Convert data to a time series object
+tourism_ts <- tourism_data_zurich_philippines
+#rename Date as date
+names(tourism_ts)[names(tourism_ts) == "Date"] <- "date"
+  
 #read .csv with stringency index
-stringency_index <- read.csv(here("data/stringency_index.csv"))
+stringency_df <- read.csv(here("data/stringency_index.csv"))
+
+# Filter data by location
+stringency_philippines <- filter(stringency_df, location == "Philippines")
+stringency_switzerland <- filter(stringency_df, location == "Switzerland")
+
+# Convert dates and set them to the first day of the month
+stringency_philippines$date <- as.Date(format(dmy(stringency_philippines$date), "%Y-%m-01"))
+stringency_switzerland$date <- as.Date(format(dmy(stringency_switzerland$date), "%Y-%m-01"))
+
+# Aggregate to monthly average, ensuring date format is maintained
+stringency_philippines <- stringency_philippines %>%
+  group_by(date) %>%
+  summarize(avg_stringency_index = mean(stringency_index, na.rm = TRUE))
+
+stringency_switzerland <- stringency_switzerland %>%
+  group_by(date) %>%
+  summarize(avg_stringency_index = mean(stringency_index, na.rm = TRUE))
+
+# Merge with Philippines data first
+merged_data_philippines <- merge(tourism_ts, stringency_philippines, by = "date", all.x = TRUE)
+
+# Then merge with Switzerland data
+merged_data <- merge(merged_data_philippines, stringency_switzerland, by = "date", all.x = TRUE, suffixes = c("_PH", "_SW"))
+
+# Replace NA values in avg_stringency_index with 0 if necessary
+merged_data$avg_stringency_index_PH[is.na(merged_data$avg_stringency_index_PH)] <- 0
+merged_data$avg_stringency_index_SW[is.na(merged_data$avg_stringency_index_SW)] <- 0
+
+
+# Create a ggplot of the stringency index
+ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippines")) +
+  geom_line() +
+  geom_line(aes(y = avg_stringency_index_SW, color = "Switzerland")) +
+  labs(title = "Stringency Index in the Philippines and Switzerland",
+       x = "Date",
+       y = "Stringency Index") +
+  scale_color_manual(values = c("#3C5B6F", "darkred"),
+                     labels = c("Philippines", "Switzerland"))
+
+#show merge data using reactable
+reactable::reactable(merged_data)
+
+```
+
+###### Model Selection
+Choose a forecasting model that can incorporate exogenous variables (covariates). Models such as:
+
+- Multiple Regression Analysis: Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
+
+```{r}
+# Fit a multiple regression model
+model <- lm(value ~ avg_stringency_index_PH + avg_stringency_index_SW, data = merged_data)
+
+# Summary of the model
+summary(model)
+
+# Forecast the next 24 months
+forecast_values <- predict(model, newdata = merged_data)
+
 ```
 
 
-##### Incorporating Dummy Variables / Covariates
+
+- ARIMAX (Autoregressive Integrated Moving Average with Exogenous Variables): Suitable for handling time series data with external influences.
+
+```{r}
+#transform to a time series object frequency 12
+tourism_ts <- ts(merged_data$value)  # Monthly data has frequency 12
+
+# Prepare the exogenous regressors
+exog_data <- cbind(merged_data$avg_stringency_index_PH, merged_data$avg_stringency_index_SW)
+
+# Fit an ARIMAX model
+model <- auto.arima(tourism_ts, xreg = exog_data, seasonal = TRUE)
+
+# Summary of the model
+summary(model)
+
+
+#forecast 24 months
+forecast_values <- model %>%
+  forecast(xreg = exog_data, h = 24)
+
+
+# Plot the forecast along with the actual data
+plot_arimax <- autoplot(forecast_values, series = "Forecast", alpha = 0.5) +
+  autolayer(tourism_ts, series = "Actual Data", alpha = 0.8) +  # Ensure tourism_ts is correctly formatted as ts
+  labs(title = "ARIMAX Forecast of Tourists from the Philippines to Zurich",
+       x = "Date",
+       y = "Number of Tourists") +
+  guides(colour = guide_legend(title = "Data Type"))
+
+print(tourism_ts)
+print(forecast_values)
+print(exog_data)
+plot_arimax
+```
+
+
+- State Space Models/Structural Time Series Model: These models are flexible in handling multiple covariates with varying impacts over time.
+
+
+
+
+
+##### Incorporating Dummy Variables
 Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data.
 
 #### Other ideas
