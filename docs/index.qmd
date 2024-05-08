@@ -371,42 +371,8 @@ plot(forecast_arima_vaud, main = "ARIMA Forecast for Vaud Tourism", xlab = "Date
 Question: Forecast for each country or general forecast?
 
 ## Zurich and Philipines
-### Outliers, Correlation, Colinearity, Covariates, Special Events ?
-### Special Event
-#### Covid impact
-
-![](images/clipboard-4239087395.png)
-
-##### How philipines dealt with it
-In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
-
-- Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus.
-- Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace.
-- Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings.
-- Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis.
-- Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1.
-- Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
-
-As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1
-
-
-Question : How to deal with this blackswan event ?
--   Incorporating Dummy Variables Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data.
--   Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
-
-```{r}
-# analyse the impact of covid on the data from december 2019 to 2023
-covid_impact <- tourism_data_zurich_philippines %>%
-  filter(Date >= "2019-11-01" & Date <= "2023-01-01") %>%
-  ggplot(aes(x = Date, y = value)) +
-  geom_line() +
-  labs(title = "Impact of Covid on Tourism from Philipines to Zurich",
-       x = "Date",
-       y = "Number of Trips") +
-  theme_minimal()
-covid_impact
-```
-### Naive Forecast
+### Forecast without dealing with Covid
+#### Naive Forecast
 ```{r}
 #convert tourism_ts to tsibble
 tourism_ts <- tourism_ts %>% as_tsibble()
@@ -425,8 +391,8 @@ plot <- forecast %>%
 plot
 ```
 
-### Exponential Smoothing
-#### Model ETS 1
+#### Exponential Smoothing
+##### Model ETS 1
 
 - Why additive errors ? Because the variance of the errors is constant over time no ?
 
@@ -474,7 +440,7 @@ plot <- forecast %>%
 plot
 ```
 
-##### Thus Chosen Model :
+###### Thus Chosen Model :
 ```{r}
 fit <- tourism_ts %>%
   model(ETS_M_seaso = ETS(value ~ error("A") + trend("Ad") + season("M"))) #multiplicative seasonality)
@@ -490,7 +456,7 @@ plot <- forecast %>%
 plot
 ```
 
-### ARIMA
+#### ARIMA
 
 Question : Do we need to differentiate the data ?
 
@@ -514,7 +480,7 @@ plot_arima
 ```
 Ugly forecast, confidence interval is too big
 
-#### Diagnostic
+##### Diagnostic
 ```{r}
 # Check the diagnostics of the ARIMA model
 fit_arima %>% report()
@@ -527,6 +493,47 @@ autoplot(residuals(fit_arima))
 fit_updated <- auto.arima(tourism_ts, seasonal = TRUE, stepwise = FALSE, approximation = FALSE)
 summary(fit_updated)
 ```
+
+
+### Forecast but dealing with Covid now
+#### Special Event- Covid impact
+
+EXplanation
+![](images/clipboard-4239087395.png)
+
+##### How philipines dealt with it
+In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
+
+
+CHANGE THIS TEXT ITS BULLSHIT
+*****
+- Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus.
+- Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace.
+- Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings.
+- Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis.
+- Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1.
+- Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
+
+As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1
+******
+
+Question : How to deal with this blackswan event ?
+##### Covariates
+Covariate Adjustment Adjust your forecasts to account for the impact of COVID-19 by including covariates that capture the effects of the pandemic. These covariates can be used to adjust the forecasts based on the observed changes in the data due to COVID-19. For example, you can include a covariate that captures the effect of lockdowns or travel restrictions on tourism data. Scenario Analysis Conduct scenario analysis to explore the potential impact of different COVID-19 scenarios on your forecasts. By considering a range of possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity Analysis Evaluate the sensitivity of your forecasts to changes in key assumptions or parameters. By conducting sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
+
+```{r}
+#read .csv with stringency index
+stringency_index <- read.csv(here("data/stringency_index.csv"))
+```
+
+
+##### Incorporating Dummy Variables / Covariates
+Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data.
+
+#### Other ideas
+-   Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
+- Delete the timestamp of the covid period and use fill_gaps() to fill the missing values and then use the a model to predict the missing values.
+- If we use the ARIMA model, we can use covariates to account for the impact of COVID-19. By including a dummy variable that captures the effect of the pandemic, we can adjust the forecasts to reflect the changes in the data due to COVID-19.
 
 
 # Model Selection
