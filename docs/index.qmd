@@ -370,7 +370,21 @@ forecast_arima_vaud <- forecast(arima_vaud, h = 24)
 plot(forecast_arima_vaud, main = "ARIMA Forecast for Vaud Tourism", xlab = "Date", ylab = "Number of Tourists")
 ```
 
-Question: Forecast for each country or general forecast?
+```{r}
+# Fit ARIMA model with specified parametes
+arima_model <- arima(vaud_ts, order = c(5, 1, 0), seasonal = list(order = c(0, 1, 1), period = 12))
+
+forecast_a_vaud <- arima_model %>%
+  forecast(h = 24)
+
+# Plot the forecast
+forecast_a_vaud %>%
+  autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
+
+#Provide forecast in table
+as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
+  kable_styling(full_width = FALSE)
+```
 
 ## Zurich and Philipines
 ### Forecast without dealing with Covid
