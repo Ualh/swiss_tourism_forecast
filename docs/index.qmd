@@ -24,13 +24,6 @@ abstract: |
 # loading all the necessary packages
 library(here)
 source(here("docs/setup.R"))
-library(fpp3)
-library(fable)
-library(tsibble)
-library(dplyr)
-library(lubridate)
-library(plotly)
-library(reactable)
 #library(anomalize)
 ```
 
@@ -92,8 +85,7 @@ reactable::reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
 
 ### Tourism Data - Vaud
 
-Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. 
-We start by filtering the "Kanton" column to keep only the canton of Vaud. 
+Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. We start by filtering the "Kanton" column to keep only the canton of Vaud.
 
 ```{r}
 # Filter by canton Vaud 
@@ -117,11 +109,10 @@ sum(is.na(tourism_data_zurich))
 tourism_data_zurich %>% filter(is.na(value))
 
 #show the data in a table using reactable
-reactable::reactable(head(tourism_data_zurich, 1000))
+reactable(head(tourism_data_zurich, 1000))
 ```
 
 There are 1869 missing values for the two sub-datasets. These missing values come from the 'value' column, creating gaps in the time series. We'll see later how we're going to process them to do modelling.
-
 
 ### Tourism Data - Zurich and Philipines
 
@@ -132,9 +123,10 @@ tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland 
 #show table using reactable
 reactable::reactable(tourism_data_zurich_philippines)
 ```
+
 Filtering for 'Philippinen' solved the problem of missing data we had with all countries of origin. The overnight stays are all included throughout the period.
 
-However there had been missing values, we would have used one of the two ways of dealing with the problem. Firstly, we can simply take the section of data after the last missing value, assuming that there is a long enough series of observations to produce meaningful predictions. Secondly, we can replace the missing values with estimates. To do this, we first fit an ARIMA model to the data containing missing values, and then use the model to interpolate the missing observations. 
+However there had been missing values, we would have used one of the two ways of dealing with the problem. Firstly, we can simply take the section of data after the last missing value, assuming that there is a long enough series of observations to produce meaningful predictions. Secondly, we can replace the missing values with estimates. To do this, we first fit an ARIMA model to the data containing missing values, and then use the model to interpolate the missing observations.
 
 ```{r}
 # #Creating a tsibble with missing values
@@ -155,7 +147,6 @@ However there had been missing values, we would have used one of the two ways of
 # print(filled_data)
 ```
 
-
 # EDA - Vaud
 
 ## Visitors from different countries in Vaud
@@ -163,54 +154,66 @@ However there had been missing values, we would have used one of the two ways of
 The graph shows the monthly number of overnight stays in Vaud from tourists of different countries. The period runs from January 2005 to September 2023.
 
 ```{r vaud all}
+# Create the ggplot object
 plot_vaud <- tourism_vaud %>% 
   filter(Herkunftsland != 'Herkunftsland - Total') %>%
   ggplot(aes(x = Date, y = value, group = Herkunftsland, color = Herkunftsland,
-                      text = paste("Country:", Herkunftsland, "Trips:", value))) +  # Added text for tooltip
+             text = paste("Country:", Herkunftsland, "Trips:", value))) +  # Added text for tooltip
   geom_line(show.legend = FALSE) + 
+  scale_color_viridis_d() +  # Use viridis color palette
   labs(title = "Number of visitors from Each Country to Vaud",
        x = "Date",
        y = "Number of Trips") +
   theme_minimal()
 
-# Convert to an interactive plotly object
-interactive_plot <- ggplotly(plot_vaud, tooltip = "text")
+# Convert to an interactive plotly object with specified width and height
+interactive_plot <- ggplotly(plot_vaud, tooltip = "text", width = 600, height = 400)
+
 
 # Adjust plotly settings 
 interactive_plot <- interactive_plot %>%
-  layout(margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
-         legend = list(orientation = "h", x = 0, xanchor = "left", y = -0.2))  # Adjust legend position
+  layout(
+    showlegend = FALSE # Remove legend
+  )
 
 # Display the interactive plot
 interactive_plot
 ```
 
-The time plot reveals some interesting features. 
--	According to the graph, tourists come mainly from Switzerland. The second visitor country is France. 
--	There are large dips in the number of overnight stays at the beginning of each year – these are due to holiday effects.
--	There was a important drop during the period in 2020 – this was due to the COVID pandemic.
--	For swiss tourists, there is visible increasing trend before and after the pandemic.
+The time plot reveals some interesting features. - According to the graph, tourists come mainly from Switzerland. The second visitor country is France. - There are large dips in the number of overnight stays at the beginning of each year – these are due to holiday effects. - There was a important drop during the period in 2020 – this was due to the COVID pandemic. - For swiss tourists, there is visible increasing trend before and after the pandemic.
 
-This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin.
-Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an increasing trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this serie would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
+This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin. Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an *increasing* trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this serie would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
 
-Graphical view of total number of tourists in canton Vaud
+Graphical view of total number of tourists in canton Vaud :
 
 ```{r vaud aggregated}
-head(tourism_vaud)
 tourism_vaud_total <- tourism_vaud %>%
   filter(Herkunftsland == 'Herkunftsland - Total') %>%
   select(-c(Herkunftsland, Kanton, Monat, Jahr))
-tourism_vaud_total%>%
+
+# Create the ggplot object with viridis color palette
+plot_vaud_total <- tourism_vaud_total %>%
   ggplot(aes(x = Date, y = value)) +
-  geom_line() +
+  geom_line(color = viridis(1)) +  # Use viridis color palette for a single line
   labs(x = "Date", y = "Number of tourists", title = "Total number of tourists in canton Vaud") + 
   theme_minimal()
+
+# Convert to an interactive plotly object with specified width and height
+interactive_plot_total <- ggplotly(plot_vaud_total, width = 600, height = 400)
+
+# Adjust plotly settings
+interactive_plot_total <- interactive_plot_total %>%
+  layout(
+    showlegend = FALSE  # Remove legend if any
+  )
+
+# Display the interactive plot
+interactive_plot_total
 ```
 
 ### Decomposition
 
-We have process an additive decomposition of the time series into three components: trend, seasonality and residual. These components will allow us to understand how they contribute to the variations observed in Swiss tourism data.
+We have process an additive decomposition of the time series into three components: *trend, seasonality and residual*. These components will allow us to understand how they contribute to the variations observed in Swiss tourism data.
 
 ```{r decomposition}
 # Convert data to a time series object
@@ -228,11 +231,13 @@ vaud_ts <- tourism_vaud_total %>%
 vaud_ts %>% decompose() %>% plot()
 ```
 
-The main insights from this decomposition reflect what we have already observed. 
-- A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
-- Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
-- A stable residual component until 2020. After this period, there is a slight increase in volatility which may indicate that other events are having an impact on this time series which are not captured by the first two components.
+The main insights from this decomposition reflect what we have already observed.
 
+\- A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
+
+\- Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
+
+\- A stable residual component until 2020. After this period, there is a slight increase in volatility which may indicate that other events are having an impact on this time series which are not captured by the first two components.
 
 # EDA - Zurich
 
@@ -242,10 +247,10 @@ The graph shows the monthly number of overnight stays in Zurich from tourists of
 
 ```{r}
 # Preparing the data
-#removing value 'Schweiz' in column 'Herkunftsland' as it is just the whole of Switzerland
+#removing value in column 'Herkunftsland' as it is just the whole of Switzerland
 data <- tourism_data_zurich %>%
   filter(!is.na(value)) %>%  # Removing rows with NA values in the 'value' column
-  mutate(Monat = month(Date, label = TRUE, abbr = TRUE),  # Extract month from Date
+  mutate(Monat = month(Date, label = TRUE, abbr = TRUE),  # Extract month 
          Jahr = year(Date)) %>%  # Extract year from Date
   group_by(Herkunftsland, Date) %>%  # Group by country and date
   summarise(Trips = sum(value), .groups = 'drop')  # Summing up trips for each country per date
@@ -254,46 +259,53 @@ p <- ggplot(data, aes(x = Date, y = Trips, group = Herkunftsland,
                       color = Herkunftsland == "Philippinen",
                       text = paste("Country:", Herkunftsland, "<br>Trips:", Trips))) +  # Added text for tooltip
   geom_line(show.legend = FALSE) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "grey")) +
+    scale_color_viridis_d() +  # Use viridis color palette
   labs(title = "Number of Trips from Each Country to Zurich",
        x = "Date",
        y = "Number of Trips") +
   theme_minimal()
 
 # Convert to an interactive plotly object
-interactive_plot <- ggplotly(p, tooltip = "text")
+interactive_plot <- ggplotly(p, tooltip = "text", width = 600, height = 600)
 
 # Adjust plotly settings 
 interactive_plot <- interactive_plot %>%
-  layout(margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
-         legend = list(orientation = "h", x = 0, xanchor = "left", y = -0.2),
-         width = 600,
-         height = 400)  # Adjust legend position
+  layout(
+    margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
+    showlegend = FALSE  # Show legend
+  )
+
 # Display the interactive plot
 interactive_plot
 ```
 
-As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. 
-The red curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period.
-There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide.
-At first glance, there are regular seasonal peaks for most countries which suggests also the presence of seasonality in tourism in the canton of Zurich. 
-
+As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. The yellow curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period. There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide. At first glance, there are regular seasonal peaks for most countries which suggests also the presence of seasonality in tourism in the canton of Zurich.
 
 ## Zurich and Philippinens Visitors
 
 This graph shows only visitors from the Philippines, as this is the country of interest in our analysis.
 
 ```{r}
-# use tourism_data_zurich_philippines data to plot the values in y axis and Date in x axis
+# Use tourism_data_zurich_philippines data to plot the values in y axis and Date in x axis
 p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
-  geom_line() +
-  labs(title = "Number of Trips from Philipines to Zurich",
+  geom_line(color = viridis(1)) +  # Use viridis color palette for a single line
+  labs(title = "Number of Trips from Philippines to Zurich",
        x = "Date",
        y = "Number of Trips") +
   theme_minimal()
-p
-```
 
+# Convert to an interactive plotly object with specified width and height
+interactive_plot <- ggplotly(p, width = 600, height = 400)
+
+# Adjust plotly settings
+interactive_plot <- interactive_plot %>%
+  layout(
+    showlegend = FALSE  # Remove legend if any
+  )
+
+# Display the interactive plot
+interactive_plot
+```
 
 ### Pattern
 
@@ -316,20 +328,22 @@ decomposed <- decompose(tourism_ts)
 
 # Plot the decomposed components
 plot(decomposed)
+tourism_ts
 ```
 
-- An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
-- Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
-- A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
-
+-   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
+-   Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
+-   A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
 
 #### Seasonality
 
-Seasonal sub-series plot permit to better visualize the monthly fluctuations or each year, from 2005 to 2023. 
+Seasonal sub-series plot permit to better visualize the monthly fluctuations or each year, from 2005 to 2023.
 
 ```{r}
-# Plot the seasonality in one chart 
-ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE)
+# Plot the seasonality in one chart
+ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE) +
+  scale_color_viridis_d() +
+  theme_minimal()
 ```
 
 ```{r}
@@ -341,16 +355,13 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 #tourism_ts %>% gg_subseries(value) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 ```
 
-The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar.
-The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to a number of factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
+The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to a number of factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
 
 #### Trend
 
 Juste ecrire text sur le upward trend qu'on a vu dans la decomposition
 
-
-
-# MODELLING
+# Modelling
 
 This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, colinearity, covariates, special events, etc. Remember the following steps:
 
@@ -377,6 +388,7 @@ ets_vaud <- ets(vaud_ts, model = "AAA")
 forecast_ets_vaud <- forecast(ets_vaud, h = 24) %>% plot(main = "Forecast of visitors in Vaud", xlab = "Date", ylab = "Number of visitors")
 ```
 
+
 ### ARIMA
 
 ```{r}
@@ -396,17 +408,19 @@ arima_model <- arima(vaud_ts, order = c(5, 1, 0), seasonal = list(order = c(0, 1
 forecast_a_vaud <- arima_model %>%
   forecast(h = 24)
 
-# Plot the forecast
-forecast_a_vaud %>%
-  autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
-
-#Provide forecast in table
-as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
-  kable_styling(full_width = FALSE)
+# # Plot the forecast
+# forecast_a_vaud %>%
+#   autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
+# 
+# #Provide forecast in table
+# as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
+#   kable_styling(full_width = FALSE)
 ```
 
 ## Zurich and Philipines
+
 ### Forecast without dealing with Covid
+
 #### Naive Forecast
 
 ```{r}
@@ -534,50 +548,30 @@ summary(fit_updated)
 ```
 
 ### Forecast but dealing with Covid now
+
 #### Special Event- Covid impact
 
-Explanation
-![](images/clipboard-4239087395.png)
+Explanation ![](images/clipboard-4239087395.png)
 
 ##### How philipines dealt with it
+
 In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
 
+CHANGE THIS TEXT ITS BULLSHIT \*\*\*\*\* - Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus. - Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace. - Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings. - Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis. - Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1. - Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
 
-CHANGE THIS TEXT ITS BULLSHIT
-*****
-- Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus.
-- Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace.
-- Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings.
-- Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis.
-- Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1.
-- Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
-
-As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1
-******
+As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1 \*\*\*\*\*\*
 
 Question : How to deal with this blackswan event ?
 
 ##### Covariates
-TEXT A PAUFINER
-Covariate Adjustment Adjust your forecasts to account for the impact of COVID-19 by including covariates that capture the effects of the pandemic. These covariates can be used to adjust the forecasts based on the observed changes in the data due to COVID-19. For example, you can include a covariate that captures the effect of lockdowns or travel restrictions on tourism data. Scenario Analysis Conduct scenario analysis to explore the potential impact of different COVID-19 scenarios on your forecasts. By considering a range of possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity Analysis Evaluate the sensitivity of your forecasts to changes in key assumptions or parameters. By conducting sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
+
+TEXT A PAUFINER Covariate Adjustment Adjust your forecasts to account for the impact of COVID-19 by including covariates that capture the effects of the pandemic. These covariates can be used to adjust the forecasts based on the observed changes in the data due to COVID-19. For example, you can include a covariate that captures the effect of lockdowns or travel restrictions on tourism data. Scenario Analysis Conduct scenario analysis to explore the potential impact of different COVID-19 scenarios on your forecasts. By considering a range of possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity Analysis Evaluate the sensitivity of your forecasts to changes in key assumptions or parameters. By conducting sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
 ###### Data Integration
 
 The Oxford COVID-19 Government Response Tracker (OxCGRT) provides valuable data on government responses to the COVID-19 pandemic, including a Stringency Index that quantifies the severity of lockdown measures. Let me provide more details about this index:
 
-*Stringency Index:*
-The Stringency Index is a composite measure that evaluates the strictness of government policies related to COVID-19. It calculates a score based on nine key response metrics:
-- School closures
-- Workplace closures
-- Cancellation of public events
-- Restrictions on public gatherings
-- Closures of public transport
-- Stay-at-home requirements
-- Public information campaigns
-- Restrictions on internal movements
-- International travel controls
-Each metric is assigned a value between 0 and 100, with a higher score indicating a stricter response. The overall Stringency Index is the mean score of these nine metrics. If policies vary at the subnational level, the index reflects the strictest sub-region’s response level.
-Importantly, the Stringency Index records the strictness of government policies but does not measure or imply the appropriateness or effectiveness of a country’s response. A higher score does not necessarily mean that a country’s response is better than others lower on the index.
+*Stringency Index:* The Stringency Index is a composite measure that evaluates the strictness of government policies related to COVID-19. It calculates a score based on nine key response metrics: - School closures - Workplace closures - Cancellation of public events - Restrictions on public gatherings - Closures of public transport - Stay-at-home requirements - Public information campaigns - Restrictions on internal movements - International travel controls Each metric is assigned a value between 0 and 100, with a higher score indicating a stricter response. The overall Stringency Index is the mean score of these nine metrics. If policies vary at the subnational level, the index reflects the strictest sub-region’s response level. Importantly, the Stringency Index records the strictness of government policies but does not measure or imply the appropriateness or effectiveness of a country’s response. A higher score does not necessarily mean that a country’s response is better than others lower on the index.
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
@@ -634,9 +628,10 @@ reactable::reactable(merged_data)
 ```
 
 ###### Model Selection
+
 Choose a forecasting model that can incorporate exogenous variables (covariates). Models such as:
 
-- Multiple Regression Analysis: Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
+-   Multiple Regression Analysis: Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
 
 ```{r}
 # Fit a multiple regression model
@@ -648,11 +643,17 @@ summary(model)
 # Forecast the next 24 months
 forecast_values <- predict(model, newdata = merged_data)
 
+#us gtsummary to show the summary of the model
+model %>%
+  gtsummary::tbl_regression()
+
+#create a table with the metrics of the model and show it as an html
+model_metrics <- model %>%
+  broom::glance()
+model_metrics
 ```
 
-
-
-- ARIMAX (Autoregressive Integrated Moving Average with Exogenous Variables): Suitable for handling time series data with external influences.
+-   ARIMAX (Autoregressive Integrated Moving Average with Exogenous Variables): Suitable for handling time series data with external influences.
 
 ```{r}
 #transform to a time series object frequency 12
@@ -687,27 +688,137 @@ print(exog_data)
 plot_arimax
 ```
 
+```{r}
+# Transform to a time series object with frequency 12 (monthly data)
+tourism_ts <- ts(merged_data$value, frequency = 12, start = c(2005, 1))  # Adjust the start time as per your data
 
-- State Space Models/Structural Time Series Model: These models are flexible in handling multiple covariates with varying impacts over time.
+# Ensure exogenous variables have the same length and frequency
+exog_data <- cbind(merged_data$avg_stringency_index_PH, merged_data$avg_stringency_index_SW)
 
+# Check if lengths of tourism_ts and exog_data match
+if (length(tourism_ts) == nrow(exog_data)) {
+  # Fit an ARIMAX model
+  model <- auto.arima(tourism_ts, xreg = exog_data, seasonal = TRUE)
+  
+  # Summary of the model
+  summary(model)
+  
+  # Forecast the next 24 months, setting future exogenous variables to 0
+  future_exog <- matrix(0, nrow = 24, ncol = 2)
+  
+  forecast_values <- forecast(model, xreg = future_exog, h = 24)
+  
+  # Plot the forecast along with the actual data using autoplot from the forecast package
+  plot_forecast <- autoplot(forecast_values, series = "Forecast") +
+    autolayer(tourism_ts, series = "Actual Data") +
+    labs(title = "ARIMAX Forecast of Tourists from the Philippines to Zurich",
+         x = "Date",
+         y = "Number of Tourists") +
+    guides(colour = guide_legend(title = "Data Type"))
+  
+  print(plot_forecast)
+  
+  # Print forecasted values
+  print(forecast_values)
+  
+  # Calculate evaluation metrics on the training data
+  residuals <- residuals(model)
+  mae <- mean(abs(residuals))
+  mape <- mean(abs(residuals / tourism_ts)) * 100
+  rmse <- sqrt(mean(residuals^2))
+  aic <- AIC(model)
+  bic <- BIC(model)
+  
+  # Print evaluation metrics
+  cat("Evaluation Metrics:\n")
+  cat("MAE:", mae, "\n")
+  cat("MAPE:", mape, "\n")
+  cat("RMSE:", rmse, "\n")
+  cat("AIC:", aic, "\n")
+  cat("BIC:", bic, "\n")
+} else {
+  stop("Length of tourism_ts and exog_data do not match. Please check the data.")
+}
+```
 
-
-
+-   State Space Models/Structural Time Series Model: These models are flexible in handling multiple covariates with varying impacts over time.
 
 ##### Incorporating Dummy Variables
+
 Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data.
 
 #### Other ideas
+
 -   Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
-- Delete the timestamp of the covid period and use fill_gaps() to fill the missing values and then use the a model to predict the missing values.
-- If we use the ARIMA model, we can use covariates to account for the impact of COVID-19. By including a dummy variable that captures the effect of the pandemic, we can adjust the forecasts to reflect the changes in the data due to COVID-19.
-
-
+-   Delete the timestamp of the covid period and use fill_gaps() to fill the missing values and then use the a model to predict the missing values.
+-   If we use the ARIMA model, we can use covariates to account for the impact of COVID-19. By including a dummy variable that captures the effect of the pandemic, we can adjust the forecasts to reflect the changes in the data due to COVID-19.
 
 # Model Selection
 
 Use Information Criteria for Model Comparison: Evaluate models based on criteria such as AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
 
 ```{r}
+# Transform to a time series object with frequency 12 (monthly data)
+tourism_ts <- tourism_data_zurich_philippines %>%
+  arrange(Date) %>%
+  mutate(value = replace_na(value, 0)) %>%  # Replace NA values with 0 if necessary
+  as_tsibble(index = Date)
+
+# Convert tourism_ts to tsibble and create models
+
+# Fit Naive model
+naive_fit <- tourism_ts %>% model(NAIVE = NAIVE(value))
+naive_forecast <- naive_fit %>% forecast(h = 24)
+naive_residuals <- residuals(naive_fit)
+naive_metrics <- naive_fit %>% accuracy()
+
+# Fit ETS model
+ets_fit <- tourism_ts %>% model(ETS = ETS(value ~ error("A") + trend("A") + season("M")))
+ets_forecast <- ets_fit %>% forecast(h = 24)
+ets_residuals <- residuals(ets_fit)
+ets_metrics <- ets_fit %>% accuracy()
+
+# Fit ARIMA model
+arima_fit <- tourism_ts %>% model(ARIMA = ARIMA(value))
+arima_forecast <- arima_fit %>% forecast(h = 24)
+arima_residuals <- residuals(arima_fit)
+arima_metrics <- arima_fit %>% accuracy()
+
+# Prepare the exogenous regressors for ARIMAX
+merged_data <- merged_data %>%
+  mutate(date = as.Date(date))
+
+# Convert to a time series object with frequency 12 (monthly data)
+tourism_ts_with_exog <- ts(merged_data$value, frequency = 12, start = c(2005, 1))  # Adjust the start time as per your data
+exog_data <- cbind(merged_data$avg_stringency_index_PH, merged_data$avg_stringency_index_SW)
+future_exog <- matrix(0, nrow = 24, ncol = 2)
+
+# Fit ARIMAX model
+arimax_fit <- auto.arima(tourism_ts_with_exog, xreg = exog_data, seasonal = TRUE)
+arimax_forecast <- forecast(arimax_fit, xreg = future_exog, h = 24)
+arimax_residuals <- residuals(arimax_fit)
+arimax_metrics <- data.frame(
+  Model = "ARIMAX",
+  MAE = mean(abs(arimax_residuals)),
+  MAPE = mean(abs(arimax_residuals / tourism_ts_with_exog)) * 100,
+  RMSE = sqrt(mean(arimax_residuals^2)),
+  AIC = AIC(arimax_fit),
+  BIC = BIC(arimax_fit)
+)
+
+# Create a summary data frame with the evaluation metrics for each model
+model_comparison <- data.frame(
+  Model = c("Naive", "ETS", "ARIMA", "ARIMAX"),
+  MAE = c(naive_metrics$MAE, ets_metrics$MAE, arima_metrics$MAE, arimax_metrics$MAE),
+  MAPE = c(naive_metrics$MAPE, ets_metrics$MAPE, arima_metrics$MAPE, arimax_metrics$MAPE),
+  RMSE = c(naive_metrics$RMSE, ets_metrics$RMSE, arima_metrics$RMSE, arimax_metrics$RMSE),
+  AIC = c(naive_metrics$AIC, ets_metrics$AIC, arima_metrics$AIC, arimax_metrics$AIC),
+  BIC = c(naive_metrics$BIC, ets_metrics$BIC, arima_metrics$BIC, arimax_metrics$BIC)
+)
+
+# Display the table using kableExtra
+model_comparison %>%
+  kbl(caption = "Model Comparison for Tourism Forecasting") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
 
 ```

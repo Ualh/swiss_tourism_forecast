@@ -31,8 +31,12 @@ packages <- c(
   "tsibbledata", # Package for time series data sets.
   "flextable", # Package for creating flexible tables in R.
   "readxl", # Package for reading Excel files into R.
-  'hts' # Package for hierarchical and grouped time series.
-)
+  'hts', # Package for hierarchical and grouped time series.
+  "fpp3","fable","tsibble","dplyr", "lubridate", # for time series analysis
+  "plotly", "ggplot2", "plotly", "viridis", # for interactive plots
+  "reactable", # for interactive tables
+  "gtsummary" # for summary tables
+  )
 
 # Install missing packages and load all the required libraries
 purrr::walk(packages, function(pkg) {
