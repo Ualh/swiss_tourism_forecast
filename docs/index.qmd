@@ -346,8 +346,7 @@ The years 2022 and 2023 show a significant increase in visitor numbers compared 
 
 #### Trend
 
-Juste ecrire text sur le upward trend qu'on a vu dans la decomposition
-
+There is an upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
 
 
 # MODELLING
@@ -379,6 +378,8 @@ forecast_ets_vaud <- forecast(ets_vaud, h = 24) %>% plot(main = "Forecast of vis
 
 ### ARIMA
 
+The ARIMA model has been adjusted to take account of the seasonality of the data, which is crucial for time series with pronounced seasonal variations, as is the case here. 
+
 ```{r}
 arima_vaud <- auto.arima(vaud_ts, seasonal = TRUE)
 
@@ -405,9 +406,18 @@ as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") 
   kable_styling(full_width = FALSE)
 ```
 
+The graph shows that the seasonality observed in the historical data continues to manifest itself in the future forecasts, with recurring seasonal peaks and troughs. This demonstrates the robustness of the ARIMA model
+Forecasts for the next two years (24 months) are represented by the blue line.
+The grey bands around the blue line represent the forecast confidence interval, indicating the range of values within which future values are likely to lie with a certain probability.
+Concerning the trend, the model predicts that this upward trend will continue.
+
+
+
 ## Zurich and Philipines
 ### Forecast without dealing with Covid
 #### Naive Forecast
+
+The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 24 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich. 
 
 ```{r}
 #convert tourism_ts to tsibble
@@ -426,6 +436,11 @@ plot <- forecast %>%
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
 ```
+
+This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach. 
+
+The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
+
 
 #### Exponential Smoothing
 
