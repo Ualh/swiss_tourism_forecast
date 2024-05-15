@@ -92,6 +92,9 @@ reactable::reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
 
 ### Tourism Data - Vaud
 
+Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. 
+We start by filtering the "Kanton" column to keep only the canton of Vaud. 
+
 ```{r}
 # Filter by canton Vaud 
 tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
@@ -103,7 +106,7 @@ reactable::reactable(head(tourism_vaud, 20))
 
 ### Tourism Data - Zurich
 
-We filtered the 'Canton' column to keep only the canton of Zurich.
+We filtered the "Kanton" column to keep only the canton of Zurich.
 
 ```{r Tourism Zurich}
 #filter column 'Kanton' for Zurich
@@ -117,22 +120,21 @@ tourism_data_zurich %>% filter(is.na(value))
 reactable::reactable(head(tourism_data_zurich, 1000))
 ```
 
+There are 1869 missing values for the two sub-datasets. These missing values come from the 'value' column, creating gaps in the time series. We'll see later how we're going to process them to do modelling.
+
+
 ### Tourism Data - Zurich and Philipines
 
-Same as above, but we're also filtering the country of origin, keeping only 'Philippinen' as that is what we're aiming for.
+We are filtering the ‘Kanton’ column and the ‘Herkunftsland’ column, keeping Zurich and Philippinen for the country of origin.
 
 ```{r Tourism Zurich and Philipines}
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
 #show table using reactable
 reactable::reactable(tourism_data_zurich_philippines)
 ```
+Filtering for 'Philippinen' solved the problem of missing data we had with all countries of origin. The overnight stays are all included throughout the period.
 
-### Deal with NAN
-
-**A supprimer ou juste mentionner quon a pas de NAN**
-We have none in the data filtered with Zurich and Philippines, but if we would have we would : Impute missing values ARIMA
-
-If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
+However there had been missing values, we would have used one of the two ways of dealing with the problem. Firstly, we can simply take the section of data after the last missing value, assuming that there is a long enough series of observations to produce meaningful predictions. Secondly, we can replace the missing values with estimates. To do this, we first fit an ARIMA model to the data containing missing values, and then use the model to interpolate the missing observations. 
 
 ```{r}
 # #Creating a tsibble with missing values
@@ -153,9 +155,12 @@ If the missing values are random or if excluding them would result in a loss of 
 # print(filled_data)
 ```
 
+
 # EDA - Vaud
 
 ## Visitors from different countries in Vaud
+
+The graph shows the monthly number of overnight stays in Vaud from tourists of different countries. The period runs from January 2005 to September 2023.
 
 ```{r vaud all}
 plot_vaud <- tourism_vaud %>% 
@@ -180,7 +185,14 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-According to the graph the most tourist in canton Vaud are Swiss and France.
+The time plot reveals some interesting features. 
+-	According to the graph, tourists come mainly from Switzerland. The second visitor country is France. 
+-	There are large dips in the number of overnight stays at the beginning of each year – these are due to holiday effects.
+-	There was a important drop during the period in 2020 – this was due to the COVID pandemic.
+-	For swiss tourists, there is visible increasing trend before and after the pandemic.
+
+This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin.
+Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an increasing trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this serie would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
 
 Graphical view of total number of tourists in canton Vaud
 
@@ -198,6 +210,8 @@ tourism_vaud_total%>%
 
 ### Decomposition
 
+We have process an additive decomposition of the time series into three components: trend, seasonality and residual. These components will allow us to understand how they contribute to the variations observed in Swiss tourism data.
+
 ```{r decomposition}
 # Convert data to a time series object
 vaud_ts <- tourism_vaud_total %>%
@@ -214,13 +228,17 @@ vaud_ts <- tourism_vaud_total %>%
 vaud_ts %>% decompose() %>% plot()
 ```
 
-We see clear seasonality with picks in summer and dip in January.
+The main insights from this decomposition reflect what we have already observed. 
+- A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
+- Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
+- A stable residual component until 2020. After this period, there is a slight increase in volatility which may indicate that other events are having an impact on this time series which are not captured by the first two components.
 
-We saw a big drop in March 2020 due to the global coronavirus pandemic.
 
 # EDA - Zurich
 
 ## Zurich and All visiting countries
+
+The graph shows the monthly number of overnight stays in Zurich from tourists of different countries.
 
 ```{r}
 # Preparing the data
@@ -255,13 +273,11 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-This graph shows changes in the number of overnight stays from January 2005 to September 2023.
+As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. 
+The red curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period.
+There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide.
+At first glance, there are regular seasonal peaks for most countries which suggests also the presence of seasonality in tourism in the canton of Zurich. 
 
-The red curve represents the Philippines. It is flat and shows a considerably small number of trips from this country to Zurich over the period. The grey curves represent other countries visiting the canton of Zurich. Swiss people are the most frequent visitors, followed by Germany and the United States.
-
-A drastic drop can be observed. This could be due to the COVID-19 pandemic, which had a significant impact on international travel and thus on tourism industry worldwide.
-
-At first glance, we can observe regular seasonal peaks for most countries, suggesting the presence of seasonality in tourism to the canton of Zurich.
 
 ## Zurich and Philippinens Visitors
 
@@ -278,23 +294,12 @@ p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
 p
 ```
 
--   Slight seasonality
-
--   General upward trend in the number of nights spent before 2020.
-
--   Very sharp fall in 2020 - covid
-
--   General upward trend after the fall
 
 ### Pattern
 
 #### Decomposition
 
-We apply a standard decomposition of the number of overnight stays in Zurich for the Philippines to reveal seasonal trends, long-term trends and irregular components of the data.
-
-Splitting the times series into several components allows us to understand how the different components contribute to the variations observed in Swiss tourism data.
-
-We chose to split the times series into monthly data.
+The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
 
 ```{r}
 # Convert data to a time series object
@@ -313,7 +318,14 @@ decomposed <- decompose(tourism_ts)
 plot(decomposed)
 ```
 
+- An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
+- Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
+- A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
+
+
 #### Seasonality
+
+Seasonal sub-series plot permit to better visualize the monthly fluctuations or each year, from 2005 to 2023. 
 
 ```{r}
 # Plot the seasonality in one chart 
@@ -329,9 +341,14 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 #tourism_ts %>% gg_subseries(value) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 ```
 
+The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar.
+The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to a number of factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
+
 #### Trend
 
 Juste ecrire text sur le upward trend qu'on a vu dans la decomposition
+
+
 
 # MODELLING
 
@@ -352,6 +369,8 @@ Questions ?
 ```
 
 ### ETS model
+
+This ETS model generates forecasts for the next two years (h = 24) and takes into account the Trend, Errors and Seasonality present in the time series. These three components are additive, which is why it is an AAA model.
 
 ```{r}
 ets_vaud <- ets(vaud_ts, model = "AAA")
