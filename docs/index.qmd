@@ -446,7 +446,7 @@ fit <- tourism_ts %>%
   model(NAIVE = NAIVE(value))
 # Forecast the next 2 years periods
 forecast <- fit %>%
-  forecast(h = 24)
+  forecast(h = 15)
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
 plot <- forecast %>%
   autoplot(tourism_ts, alpha = 0.5) +
@@ -460,12 +460,11 @@ This naive model predicts that future values will be equal to the last observed 
 
 The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
 
-
 #### Exponential Smoothing
 
 -   Why additive errors ? Because the variance of the errors is constant over time no ?
 
-```{r}
+```{r warning=FALSE}
 # Fit an ETS model
 # Adjusting the model parameters according to the characteristics of the data
 # Here "A" means additive error, "N" means no trend, and "N" means no seasonality
@@ -778,31 +777,38 @@ Introduce dummy variables into your forecasting models to account for the impact
 Use Information Criteria for Model Comparison: Evaluate models based on criteria such as AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
 
 ```{r}
+library(fpp3)
+library(tsibble)
+library(tidyverse)
+library(kableExtra)
+
+# Assuming `tourism_data_zurich_philippines` and `merged_data` are already loaded
+
 # Transform to a time series object with frequency 12 (monthly data)
 tourism_ts <- tourism_data_zurich_philippines %>%
   arrange(Date) %>%
   mutate(value = replace_na(value, 0)) %>%  # Replace NA values with 0 if necessary
-  as_tsibble(index = Date)
+  as_tsibble(index = Date) %>%
+  fill_gaps()
 
-# Convert tourism_ts to tsibble and create models
+# Ensure there are no missing values in the time series
+tourism_ts <- tourism_ts %>%
+  mutate(value = ifelse(is.na(value), 0, value))
 
 # Fit Naive model
 naive_fit <- tourism_ts %>% model(NAIVE = NAIVE(value))
 naive_forecast <- naive_fit %>% forecast(h = 24)
-naive_residuals <- residuals(naive_fit)
-naive_metrics <- naive_fit %>% accuracy()
+naive_metrics <- accuracy(naive_forecast, tourism_ts)
 
 # Fit ETS model
-ets_fit <- tourism_ts %>% model(ETS = ETS(value ~ error("A") + trend("A") + season("M")))
+ets_fit <- tourism_ts %>% model(ETS = ETS(value ~ error("A") + trend("Ad") + season("M")))
 ets_forecast <- ets_fit %>% forecast(h = 24)
-ets_residuals <- residuals(ets_fit)
-ets_metrics <- ets_fit %>% accuracy()
+ets_metrics <- accuracy(ets_forecast, tourism_ts)
 
 # Fit ARIMA model
 arima_fit <- tourism_ts %>% model(ARIMA = ARIMA(value))
 arima_forecast <- arima_fit %>% forecast(h = 24)
-arima_residuals <- residuals(arima_fit)
-arima_metrics <- arima_fit %>% accuracy()
+arima_metrics <- accuracy(arima_forecast, tourism_ts)
 
 # Prepare the exogenous regressors for ARIMAX
 merged_data <- merged_data %>%
@@ -826,19 +832,70 @@ arimax_metrics <- data.frame(
   BIC = BIC(arimax_fit)
 )
 
+# Check if AIC and BIC exist in the metrics data frames
+metric_columns <- c("MAE", "MAPE", "RMSE")
+if ("AIC" %in% names(naive_metrics)) {
+  metric_columns <- c(metric_columns, "AIC", "BIC")
+}
+
+# Extract accuracy metrics
+naive_metrics_df <- naive_metrics %>% as_tibble() %>% select(any_of(metric_columns))
+ets_metrics_df <- ets_metrics %>% as_tibble() %>% select(any_of(metric_columns))
+arima_metrics_df <- arima_metrics %>% as_tibble() %>% select(any_of(metric_columns))
+
 # Create a summary data frame with the evaluation metrics for each model
 model_comparison <- data.frame(
   Model = c("Naive", "ETS", "ARIMA", "ARIMAX"),
-  MAE = c(naive_metrics$MAE, ets_metrics$MAE, arima_metrics$MAE, arimax_metrics$MAE),
-  MAPE = c(naive_metrics$MAPE, ets_metrics$MAPE, arima_metrics$MAPE, arimax_metrics$MAPE),
-  RMSE = c(naive_metrics$RMSE, ets_metrics$RMSE, arima_metrics$RMSE, arimax_metrics$RMSE),
-  AIC = c(naive_metrics$AIC, ets_metrics$AIC, arima_metrics$AIC, arimax_metrics$AIC),
-  BIC = c(naive_metrics$BIC, ets_metrics$BIC, arima_metrics$BIC, arimax_metrics$BIC)
+  MAE = c(naive_metrics_df$MAE, ets_metrics_df$MAE, arima_metrics_df$MAE, arimax_metrics$MAE),
+  MAPE = c(naive_metrics_df$MAPE, ets_metrics_df$MAPE, arima_metrics_df$MAPE, arimax_metrics$MAPE),
+  RMSE = c(naive_metrics_df$RMSE, ets_metrics_df$RMSE, arima_metrics_df$RMSE, arimax_metrics$RMSE)
 )
 
-# # Display the table using kableExtra
-# model_comparison %>%
-#   kbl(caption = "Model Comparison for Tourism Forecasting") %>%
-#   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+if ("AIC" %in% names(naive_metrics_df)) {
+  model_comparison <- model_comparison %>%
+    mutate(
+      AIC = c(naive_metrics_df$AIC, ets_metrics_df$AIC, arima_metrics_df$AIC, arimax_metrics$AIC),
+      BIC = c(naive_metrics_df$BIC, ets_metrics_df$BIC, arima_metrics_df$BIC, arimax_metrics$BIC)
+    )
+}
+
+# Display the table using kableExtra
+model_comparison %>%
+  kbl(caption = "Model Comparison for Tourism Forecasting") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+```{r}
+# Transform to a time series object with frequency 12 (monthly data)
+tourism_ts <- tourism_data_zurich_philippines %>%
+  arrange(Date) %>%
+  mutate(value = replace_na(value, 0)) %>%
+  as_tsibble(index = Date)
+
+# Fit Naive model
+naive_fit <- tourism_ts %>% model(NAIVE = NAIVE(value))
+naive_metrics <- naive_fit %>% accuracy()
+
+# Fit ETS model
+ets_fit <- tourism_ts %>% model(ETS = ETS(value ~ error("A") + trend("Ad") + season("M")))
+ets_metrics <- ets_fit %>% accuracy()
+
+# Fit ARIMA model
+arima_fit <- tourism_ts %>% model(ARIMA = ARIMA(value))
+arima_metrics <- arima_fit %>% accuracy()
+
+# Extracting metrics
+naive_MAE <- naive_metrics$MAE
+naive_MAPE <- naive_metrics$MAPE
+naive_RMSE <- naive_metrics$RMSE
+
+ets_MAE <- ets_metrics$MAE
+ets_MAPE <- ets_metrics$MAPE
+ets_RMSE <- ets_metrics$RMSE
+
+arima_MAE <- arima_metrics$MAE
+arima_MAPE <- arima_metrics$MAPE
+arima_RMSE <- arima_metrics$RMSE
 
 ```
+
