@@ -116,7 +116,7 @@ There are 1869 missing values for the two sub-datasets. These missing values com
 
 ### Tourism Data - Zurich and Philipines
 
-We are filtering the "Kanton" column and the ‘Herkunftsland’ column, keeping Zurich and Philippinen for the country of origin.
+We are filtering the "Kanton" column and the 'Herkunftsland' column, keeping Zurich and Philippinen for the country of origin.
 
 ```{r Tourism Zurich and Philipines}
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
@@ -180,9 +180,9 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-The time plot reveals some interesting features. - According to the graph, tourists come mainly from Switzerland. The second visitor country is France. - There are large dips in the number of overnight stays at the beginning of each year – these are due to holiday effects. - There was a important drop during the period in 2020 – this was due to the COVID pandemic. - For swiss tourists, there is visible increasing trend before and after the pandemic.
+The time plot reveals some interesting features. - According to the graph, tourists come mainly from Switzerland. The second visitor country is France. - There are large dips in the number of overnight stays at the beginning of each year -- these are due to holiday effects. - There was a important drop during the period in 2020 -- this was due to the COVID pandemic. - For swiss tourists, there is visible increasing trend before and after the pandemic.
 
-This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin. Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an *increasing* trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this serie would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
+This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin. Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an *increasing* trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this series would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
 
 Graphical view of total number of tourists in canton Vaud :
 
@@ -227,8 +227,11 @@ vaud_ts <- tourism_vaud_total %>%
   # Create a time series object
   with(ts(value, frequency = 12, start = decimal_date(min(Date, na.rm = TRUE))))
 
-# Decompose the time series
-vaud_ts %>% decompose() %>% plot()
+# Perform STL decomposition
+ stl(vaud_ts, s.window = "periodic") %>% 
+   autoplot() +
+  labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists in canton Vaud") +
+  theme_minimal()
 ```
 
 The main insights from this decomposition reflect what we have already observed.
@@ -361,9 +364,7 @@ The months of May to July and October seem to have visitor peaks, which may indi
 
 There is an upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
 
-
 # Modelling
-
 
 This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, colinearity, covariates, special events, etc. Remember the following steps:
 
@@ -373,60 +374,61 @@ This part is about building on your knowledge of time series techniques to model
 
 ## Total number of visitors in Vaud
 
-### Outliers, Correlation, Colinearity, Covariates, Special Events ?
-
-Questions ?
-
-```{r}
-
-```
-
 ### ETS model
 
-This ETS model generates forecasts for the next two years (h = 24) and takes into account the Trend, Errors and Seasonality present in the time series. These three components are additive, which is why it is an AAA model.
-
+The ETS (Error, Trend, Seasonality) forecast model presents numerous advantages in predicting the number of visitors to canton Vaud over a 15-month horizon due to its ease of implementation and reliability of results. The model is based on using trend and seasonality of past data to predict future without request of extra features.
 ```{r}
 ets_vaud <- ets(vaud_ts, model = "AAA")
 forecast_ets_vaud <- forecast(ets_vaud, h = 24) %>% plot(main = "Forecast of visitors in Vaud", xlab = "Date", ylab = "Number of visitors")
 ```
-
+Employing the ETS "AAA" model, characterized by additive consideration of error, trend, and seasonality components, we forecast number of visitors in canton Vaud for 15 months. The forecast generated by the ETS model appears reasonable, it follow trend and seasonality; however, the wide range of the confidence interval indicates a high level of uncertainty surrounding the predictions. 
 
 ### ARIMA
 
-The ARIMA model has been adjusted to take account of the seasonality of the data, which is crucial for time series with pronounced seasonal variations, as is the case here. 
+The automatic ARIMA (AutoRegressive Integrated Moving Average) model offers a data-driven approach to predict future trends. By automatically selecting the optimal parameters for the ARIMA model, including the order of autoregressive, differencing, and moving average components, this method simplifies the forecasting process while still capturing the underlying patterns in the data. Leveraging historical data, the automatic ARIMA model generates forecasts that account for both trend and seasonality.
 
 ```{r}
-arima_vaud <- auto.arima(vaud_ts, seasonal = TRUE)
+# Convert your time series data to a tsibble object
+vaud_tsibble <- as_tsibble(vaud_ts)
+
+# Fit ARIMA model to the data
+fit_vaud <- vaud_tsibble %>%
+  model(auto_arima = ARIMA(value, stepwise = FALSE, approximation = FALSE))
 
 # Generate forecasts for the next 2 years (24 months)
-forecast_arima_vaud <- forecast(arima_vaud, h = 24)
+forecast_vaud <- fit_vaud %>%
+  forecast(h = 15)
 
 # Plot the forecast
-plot(forecast_arima_vaud, main = "ARIMA Forecast for Vaud Tourism", xlab = "Date", ylab = "Number of Tourists")
+forecast_vaud %>%
+  autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
+
+#Provide forecast in table
+as.data.frame(forecast_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
+  kable_styling(full_width = FALSE)
 ```
+
+Automatically the model ARIMA(5,0,0)(0,1,1) was chosen. The graph shows that the seasonality observed in the historical data continues to manifest itself in the future forecasts, with recurring seasonal peaks and troughs. This demonstrates the robustness of the ARIMA model Forecasts for the next two years (15 months) are represented by the blue line. The violet bands around the blue line represent the forecast confidence interval, indicating the range of values within which future values are likely to lie with a certain probability. Due to the drop observed in 2020, the trend is showing a slight downward trajectory, however, currently, there are no evident reasons for a decrease in the number of visitors.
+
+To capture the positive trend we use model ARIMA (5,1,0)(0,1,1) .Changing  modeled explicitly using a differencing order of 1 in the non-seasonal component provide better flexibility in capturing any underlying trend patterns in the data.This adjustment allows the model to more effectively account for changes in the level of the time series data over time, potentially leading to improved accuracy in forecasting future trends in tourist arrivals in Canton Vaud.
 
 ```{r}
 # Fit ARIMA model with specified parametes
 arima_model <- arima(vaud_ts, order = c(5, 1, 0), seasonal = list(order = c(0, 1, 1), period = 12))
 
 forecast_a_vaud <- arima_model %>%
-  forecast(h = 24)
+  forecast(h = 15)
 
-# # Plot the forecast
-# forecast_a_vaud %>%
-#   autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
-# 
-# #Provide forecast in table
-# as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
-#   kable_styling(full_width = FALSE)
+# Plot the forecast
+forecast_a_vaud %>%
+  autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
+
+#Provide forecast in table
+as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
+  kable_styling(full_width = FALSE)
 ```
 
-The graph shows that the seasonality observed in the historical data continues to manifest itself in the future forecasts, with recurring seasonal peaks and troughs. This demonstrates the robustness of the ARIMA model
-Forecasts for the next two years (24 months) are represented by the blue line.
-The grey bands around the blue line represent the forecast confidence interval, indicating the range of values within which future values are likely to lie with a certain probability.
-Concerning the trend, the model predicts that this upward trend will continue.
-
-
+The ARIMA(5,1,0)(0,1,1) model effectively captures both the positive trend and seasonality present in the data, resulting in a realistic forecasting scenario. The approach results in forecasts that closely align with observed patterns, leading to a narrow confidence interval enhancing the reliability of predictions for tourist arrivals in canton Vaud.
 
 ## Zurich and Philipines
 
@@ -434,7 +436,7 @@ Concerning the trend, the model predicts that this upward trend will continue.
 
 #### Naive Forecast
 
-The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 24 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich. 
+The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 15 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich.
 
 ```{r}
 #convert tourism_ts to tsibble
@@ -462,7 +464,7 @@ metrics_naive %>%
 
 ```
 
-This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach. 
+This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach.
 
 The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
 
@@ -511,7 +513,7 @@ fit <- tourism_ts %>%
 
 # Forecast the next 2 years periods
 forecast <- fit %>%
-  forecast(h = 24)
+  forecast(h = 15)
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
 plot <- forecast %>%
   autoplot(tourism_ts, level = 90, color = "blue", alpha = 0.5) +
@@ -537,7 +539,7 @@ fit <- tourism_ts %>%
   model(ETS_M_seaso = ETS(value ~ error("A") + trend("Ad") + season("M"))) #multiplicative seasonality)
 # Forecast the next 2 years periods
 forecast <- fit %>%
-  forecast(h = 24)
+  forecast(h = 15)
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
 plot <- forecast %>%
   autoplot(tourism_ts, alpha = 0.5) +
@@ -558,7 +560,7 @@ fit_arima <- tourism_ts %>%
 
 # Forecast the next 2 years (24 months)
 forecast_arima <- fit_arima %>%
-  forecast(h = 24)
+  forecast(h = 15)
 
 # Plot the forecasts along with the historical data
 plot_arima <- forecast_arima %>%
@@ -597,7 +599,7 @@ Explanation ![](images/clipboard-4239087395.png)
 
 In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
 
-CHANGE THIS TEXT ITS BULLSHIT \*\*\*\*\* - Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus. - Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign’s sluggish pace. - Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings. - Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis. - Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing “risk-based” decisions for activities despite low case numbers1. - Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
+CHANGE THIS TEXT ITS BULLSHIT \*\*\*\*\* - Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus. - Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign's sluggish pace. - Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings. - Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis. - Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing "risk-based" decisions for activities despite low case numbers1. - Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
 
 As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1 \*\*\*\*\*\*
 
@@ -611,7 +613,7 @@ TEXT A PAUFINER Covariate Adjustment Adjust your forecasts to account for the im
 
 The Oxford COVID-19 Government Response Tracker (OxCGRT) provides valuable data on government responses to the COVID-19 pandemic, including a Stringency Index that quantifies the severity of lockdown measures. Let me provide more details about this index:
 
-*Stringency Index:* The Stringency Index is a composite measure that evaluates the strictness of government policies related to COVID-19. It calculates a score based on nine key response metrics: - School closures - Workplace closures - Cancellation of public events - Restrictions on public gatherings - Closures of public transport - Stay-at-home requirements - Public information campaigns - Restrictions on internal movements - International travel controls Each metric is assigned a value between 0 and 100, with a higher score indicating a stricter response. The overall Stringency Index is the mean score of these nine metrics. If policies vary at the subnational level, the index reflects the strictest sub-region’s response level. Importantly, the Stringency Index records the strictness of government policies but does not measure or imply the appropriateness or effectiveness of a country’s response. A higher score does not necessarily mean that a country’s response is better than others lower on the index.
+*Stringency Index:* The Stringency Index is a composite measure that evaluates the strictness of government policies related to COVID-19. It calculates a score based on nine key response metrics: - School closures - Workplace closures - Cancellation of public events - Restrictions on public gatherings - Closures of public transport - Stay-at-home requirements - Public information campaigns - Restrictions on internal movements - International travel controls Each metric is assigned a value between 0 and 100, with a higher score indicating a stricter response. The overall Stringency Index is the mean score of these nine metrics. If policies vary at the subnational level, the index reflects the strictest sub-region's response level. Importantly, the Stringency Index records the strictness of government policies but does not measure or imply the appropriateness or effectiveness of a country's response. A higher score does not necessarily mean that a country's response is better than others lower on the index.
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
@@ -699,7 +701,6 @@ model_metrics %>%
 
 -   ARIMAX (Autoregressive Integrated Moving Average with Exogenous Variables): Suitable for handling time series data with external influences.
 
-
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
 tourism_ts <- ts(merged_data$value, frequency = 12, start = c(2005, 1))  # Adjust the start time as per your data
@@ -715,8 +716,8 @@ if (length(tourism_ts) == nrow(exog_data)) {
   # Summary of the model
   summary(model)
   
-  # Forecast the next 24 months, setting future exogenous variables to 0
-  future_exog <- matrix(0, nrow = 24, ncol = 2)
+  # Forecast the next 15 months, setting future exogenous variables to 0
+  future_exog <- matrix(0, nrow = 15, ncol = 2)
   
   forecast_values <- forecast(model, xreg = future_exog, h = 24)
   
@@ -806,4 +807,3 @@ metrics_arima %>%
 ```{r}
 metrics_arimax
 ```
-
