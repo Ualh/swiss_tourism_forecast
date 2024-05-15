@@ -836,9 +836,9 @@ model_comparison <- data.frame(
   BIC = c(naive_metrics$BIC, ets_metrics$BIC, arima_metrics$BIC, arimax_metrics$BIC)
 )
 
-# Display the table using kableExtra
-model_comparison %>%
-  kbl(caption = "Model Comparison for Tourism Forecasting") %>%
-  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+# # Display the table using kableExtra
+# model_comparison %>%
+#   kbl(caption = "Model Comparison for Tourism Forecasting") %>%
+#   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
 
 ```
