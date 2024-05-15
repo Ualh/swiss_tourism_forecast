@@ -763,9 +763,10 @@ model_metrics <- data.frame(
 )
 
 #show html table with metrics
-model_metrics %>%
+metrics_arimax <- model_metrics %>%
   kable("html", caption = "Model Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+metrics_arimax
 ```
 
 -   State Space Models/Structural Time Series Model: These models are flexible in handling multiple covariates with varying impacts over time.
@@ -785,90 +786,24 @@ Introduce dummy variables into your forecasting models to account for the impact
 Use Information Criteria for Model Comparison: Evaluate models based on criteria such as AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
 
 ```{r}
-library(fpp3)
-library(tsibble)
-library(tidyverse)
-library(kableExtra)
-
-# Assuming `tourism_data_zurich_philippines` and `merged_data` are already loaded
-
-# Transform to a time series object with frequency 12 (monthly data)
-tourism_ts <- tourism_data_zurich_philippines %>%
-  arrange(Date) %>%
-  mutate(value = replace_na(value, 0)) %>%  # Replace NA values with 0 if necessary
-  as_tsibble(index = Date) %>%
-  fill_gaps()
-
-# Ensure there are no missing values in the time series
-tourism_ts <- tourism_ts %>%
-  mutate(value = ifelse(is.na(value), 0, value))
-
-# Fit Naive model
-naive_fit <- tourism_ts %>% model(NAIVE = NAIVE(value))
-naive_forecast <- naive_fit %>% forecast(h = 24)
-naive_metrics <- accuracy(naive_forecast, tourism_ts)
-
-# Fit ETS model
-ets_fit <- tourism_ts %>% model(ETS = ETS(value ~ error("A") + trend("Ad") + season("M")))
-ets_forecast <- ets_fit %>% forecast(h = 24)
-ets_metrics <- accuracy(ets_forecast, tourism_ts)
-
-# Fit ARIMA model
-arima_fit <- tourism_ts %>% model(ARIMA = ARIMA(value))
-arima_forecast <- arima_fit %>% forecast(h = 24)
-arima_metrics <- accuracy(arima_forecast, tourism_ts)
-
-# Prepare the exogenous regressors for ARIMAX
-merged_data <- merged_data %>%
-  mutate(date = as.Date(date))
-
-# Convert to a time series object with frequency 12 (monthly data)
-tourism_ts_with_exog <- ts(merged_data$value, frequency = 12, start = c(2005, 1))  # Adjust the start time as per your data
-exog_data <- cbind(merged_data$avg_stringency_index_PH, merged_data$avg_stringency_index_SW)
-future_exog <- matrix(0, nrow = 24, ncol = 2)
-
-# Fit ARIMAX model
-arimax_fit <- auto.arima(tourism_ts_with_exog, xreg = exog_data, seasonal = TRUE)
-arimax_forecast <- forecast(arimax_fit, xreg = future_exog, h = 24)
-arimax_residuals <- residuals(arimax_fit)
-arimax_metrics <- data.frame(
-  Model = "ARIMAX",
-  MAE = mean(abs(arimax_residuals)),
-  MAPE = mean(abs(arimax_residuals / tourism_ts_with_exog)) * 100,
-  RMSE = sqrt(mean(arimax_residuals^2)),
-  AIC = AIC(arimax_fit),
-  BIC = BIC(arimax_fit)
-)
-
-# Check if AIC and BIC exist in the metrics data frames
-metric_columns <- c("MAE", "MAPE", "RMSE")
-if ("AIC" %in% names(naive_metrics)) {
-  metric_columns <- c(metric_columns, "AIC", "BIC")
-}
-
-# Extract accuracy metrics
-naive_metrics_df <- naive_metrics %>% as_tibble() %>% select(any_of(metric_columns))
-ets_metrics_df <- ets_metrics %>% as_tibble() %>% select(any_of(metric_columns))
-arima_metrics_df <- arima_metrics %>% as_tibble() %>% select(any_of(metric_columns))
-
-# Create a summary data frame with the evaluation metrics for each model
-model_comparison <- data.frame(
-  Model = c("Naive", "ETS", "ARIMA", "ARIMAX"),
-  MAE = c(naive_metrics_df$MAE, ets_metrics_df$MAE, arima_metrics_df$MAE, arimax_metrics$MAE),
-  MAPE = c(naive_metrics_df$MAPE, ets_metrics_df$MAPE, arima_metrics_df$MAPE, arimax_metrics$MAPE),
-  RMSE = c(naive_metrics_df$RMSE, ets_metrics_df$RMSE, arima_metrics_df$RMSE, arimax_metrics$RMSE)
-)
-
-if ("AIC" %in% names(naive_metrics_df)) {
-  model_comparison <- model_comparison %>%
-    mutate(
-      AIC = c(naive_metrics_df$AIC, ets_metrics_df$AIC, arima_metrics_df$AIC, arimax_metrics$AIC),
-      BIC = c(naive_metrics_df$BIC, ets_metrics_df$BIC, arima_metrics_df$BIC, arimax_metrics$BIC)
-    )
-}
-
-# Display the table using kableExtra
-model_comparison %>%
-  kbl(caption = "Model Comparison for Tourism Forecasting") %>%
-  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+metrics_naive %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
+
+```{r}
+metrics_ets %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+```{r}
+metrics_arima %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+```{r}
+metrics_arimax
+```
+
