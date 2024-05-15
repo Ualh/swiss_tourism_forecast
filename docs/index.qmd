@@ -116,7 +116,7 @@ There are 1869 missing values for the two sub-datasets. These missing values com
 
 ### Tourism Data - Zurich and Philipines
 
-We are filtering the ‘Kanton’ column and the ‘Herkunftsland’ column, keeping Zurich and Philippinen for the country of origin.
+We are filtering the "Kanton" column and the ‘Herkunftsland’ column, keeping Zurich and Philippinen for the country of origin.
 
 ```{r Tourism Zurich and Philipines}
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
@@ -337,7 +337,7 @@ tourism_ts
 
 #### Seasonality
 
-Seasonal sub-series plot permit to better visualize the monthly fluctuations or each year, from 2005 to 2023.
+Seasonal sub-series plot permit to better visualize the monthly fluctuations of each year, from 2005 to 2023.
 
 ```{r}
 # Plot the seasonality in one chart
@@ -358,8 +358,6 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to a number of factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
 
 #### Trend
-
-Juste ecrire text sur le upward trend qu'on a vu dans la decomposition
 
 There is an upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
 
