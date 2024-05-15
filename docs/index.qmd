@@ -452,6 +452,14 @@ plot <- forecast %>%
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
+
+#get AIC metric
+metrics_naive <- fit %>% accuracy()
+# Display accuracy metrics in an HTML table
+metrics_naive %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
 ```
 
 This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach. 
@@ -471,7 +479,7 @@ fit <- tourism_ts %>%
   model(ETS_M_seaso = ETS(value ~ error("A") + trend("A") + season("A"))) #multiplicative seasonality)
 # Forecast the next 2 years periods
 forecast <- fit %>%
-  forecast(h = 24)
+  forecast(h = 15)
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
 plot <- forecast %>%
   autoplot(tourism_ts, alpha = 0.5) +
@@ -479,6 +487,14 @@ plot <- forecast %>%
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
+
+# Calculate the accuracy of the training set
+metrics_ets_AAA <- fit %>% accuracy()
+
+# Display accuracy metrics in an HTML table
+metrics_naive %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
 Clearly see here that the confidence interval is too big, almost like a naive forecast
@@ -503,6 +519,15 @@ plot <- forecast %>%
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
+
+# Calculate the accuracy of the training set
+metrics_ets <- fit %>% accuracy()
+
+
+# Display accuracy metrics in an HTML table
+metrics_ets %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
 ##### Thus Chosen Model :
@@ -543,20 +568,18 @@ plot_arima <- forecast_arima %>%
        y = "Number of Tourists") +
   guides(colour = guide_legend(title = "Forecast"))
 plot_arima
+
+# Calculate the accuracy of the training set
+metrics_arima <- fit_arima %>% accuracy()
+
+
+# Display accuracy metrics in an HTML table
+metrics_arima %>%
+  kable("html", caption = "Model Accuracy Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
 Ugly forecast, confidence interval is too big
-
-#### Diagnostic
-
-```{r}
-# Check the diagnostics of the ARIMA model
-report <- fit_arima %>% report()
-
-autoplot(residuals(fit_arima))
-
-#show report in html
-```
 
 ```{r}
 # using auto.arima with stepwise and approximation options turned off for a more thorough search
@@ -640,8 +663,7 @@ ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippi
                      labels = c("Philippines", "Switzerland"))
 
 #show merge data using reactable
-reactable::reactable(merged_data)
-
+reactable(merged_data)
 ```
 
 ###### Model Selection
@@ -668,42 +690,15 @@ model %>%
 model_metrics <- model %>%
   broom::glance()
 model_metrics
+
+# show html table with metrics
+model_metrics %>%
+  kable("html", caption = "Model Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
 -   ARIMAX (Autoregressive Integrated Moving Average with Exogenous Variables): Suitable for handling time series data with external influences.
 
-```{r}
-#transform to a time series object frequency 12
-tourism_ts <- ts(merged_data$value)  # Monthly data has frequency 12
-
-# Prepare the exogenous regressors
-exog_data <- cbind(merged_data$avg_stringency_index_PH, merged_data$avg_stringency_index_SW)
-
-# Fit an ARIMAX model
-model <- auto.arima(tourism_ts, xreg = exog_data, seasonal = TRUE)
-
-# Summary of the model
-summary(model)
-
-
-#forecast 24 months
-forecast_values <- model %>%
-  forecast(xreg = exog_data, h = 24)
-
-
-# Plot the forecast along with the actual data
-plot_arimax <- autoplot(forecast_values, series = "Forecast", alpha = 0.5) +
-  autolayer(tourism_ts, series = "Actual Data", alpha = 0.8) +  # Ensure tourism_ts is correctly formatted as ts
-  labs(title = "ARIMAX Forecast of Tourists from the Philippines to Zurich",
-       x = "Date",
-       y = "Number of Tourists") +
-  guides(colour = guide_legend(title = "Data Type"))
-
-print(tourism_ts)
-print(forecast_values)
-print(exog_data)
-plot_arimax
-```
 
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -756,6 +751,21 @@ if (length(tourism_ts) == nrow(exog_data)) {
 } else {
   stop("Length of tourism_ts and exog_data do not match. Please check the data.")
 }
+
+#show metric in html
+model_metrics <- data.frame(
+  Model = "ARIMAX",
+  MAE = mae,
+  MAPE = mape,
+  RMSE = rmse,
+  AIC = aic,
+  BIC = bic
+)
+
+#show html table with metrics
+model_metrics %>%
+  kable("html", caption = "Model Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
 -   State Space Models/Structural Time Series Model: These models are flexible in handling multiple covariates with varying impacts over time.
@@ -862,38 +872,3 @@ model_comparison %>%
   kbl(caption = "Model Comparison for Tourism Forecasting") %>%
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
 ```
-
-```{r}
-# Transform to a time series object with frequency 12 (monthly data)
-tourism_ts <- tourism_data_zurich_philippines %>%
-  arrange(Date) %>%
-  mutate(value = replace_na(value, 0)) %>%
-  as_tsibble(index = Date)
-
-# Fit Naive model
-naive_fit <- tourism_ts %>% model(NAIVE = NAIVE(value))
-naive_metrics <- naive_fit %>% accuracy()
-
-# Fit ETS model
-ets_fit <- tourism_ts %>% model(ETS = ETS(value ~ error("A") + trend("Ad") + season("M")))
-ets_metrics <- ets_fit %>% accuracy()
-
-# Fit ARIMA model
-arima_fit <- tourism_ts %>% model(ARIMA = ARIMA(value))
-arima_metrics <- arima_fit %>% accuracy()
-
-# Extracting metrics
-naive_MAE <- naive_metrics$MAE
-naive_MAPE <- naive_metrics$MAPE
-naive_RMSE <- naive_metrics$RMSE
-
-ets_MAE <- ets_metrics$MAE
-ets_MAPE <- ets_metrics$MAPE
-ets_RMSE <- ets_metrics$RMSE
-
-arima_MAE <- arima_metrics$MAE
-arima_MAPE <- arima_metrics$MAPE
-arima_RMSE <- arima_metrics$RMSE
-
-```
-
