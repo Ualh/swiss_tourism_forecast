@@ -124,7 +124,7 @@ There are 1869 missing values for the two sub-datasets. These missing values com
 
 ### Tourism Data - Zurich and Philippines
 
-We are filtering the "Kanton" column and the 'Herkunftsland' column, keeping Zurich and Philippinen for the country of origin.
+We are filtering the "Kanton" column and the 'Herkunftsland' column, keeping "Zurich" and "Philippinen" for the country of origin.
 
 Here is all the instances of the raw filtered data :
 
@@ -469,8 +469,6 @@ metrics_naive <- metrics_naive %>%
 
 #### ETS
 
--   Why additive errors ? Because the variance of the errors is constant over time no ?
-
 ```{r warning=FALSE}
 # Fit an ETS model
 # Adjusting the model parameters according to the characteristics of the data
@@ -625,7 +623,7 @@ In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mi
 
 CHANGE THIS TEXT ITS BULLSHIT \*\*\*\*\* - Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus. - Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign's sluggish pace. - Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings. - Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis. - Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing "risk-based" decisions for activities despite low case numbers1. - Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
 
-As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travelers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1 \*\*\*\*\*\*
+As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travellers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1 \*\*\*\*\*\*
 
 Question : How to deal with this blackswan event ?
 
@@ -721,7 +719,7 @@ model %>%
   gtsummary::tbl_regression()
 ```
 
-We observe that the p-value are lower for switzerland than for Philippines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for switzerland and 5.9 for Philippines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
+We observe that the p-value are lower for Switzerland than for Philippines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for Switzerland and 5.9 for Philippines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
 
 We can observe here the metrics:
 ```{r}
