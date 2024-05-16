@@ -1,5 +1,5 @@
 ---
-title: Zurich by the Numbers - Predictive Insights into Tourism Dynamic
+title: Zurich and Vaud by the Numbers - Predictive Insights into Tourism Dynamic
 author:
  - Name I, First Name I
  - Name II, First Name II
@@ -37,7 +37,7 @@ The main objectives of this project is to predict :
 
 -   The overnight satys of visitors from Philippines to Zürich, from October 2023 until December 2024.
 
-# DATA
+# Data
 
 ## Cleaning & Wrangling
 
@@ -46,6 +46,8 @@ The main objectives of this project is to predict :
 The dataset contains information about the overnights stays by tourists in the various Swiss cantons. It indicates the tourist's country of origin, the canton of stay, the month, the year and the total number of overnights stays.
 
 As the dataset provided is in German, we have translated the data in English to make it more intuitive and understandable for everyone. Then, we created a new 'Date' column, year-month-day, which corresponds to the correct format to be able to make predictions.
+
+Here are the first 1000 instances of the raw data :
 
 ```{r Tourism ALL}
 # Load the data in folder data named Dataset_tourism.xlsx)
@@ -79,7 +81,7 @@ sum(is.na(tourism_data_no_total))
 #analyse the NAN values, where are they
 (tourism_data_no_total %>% filter(is.na(value)))
 #show data using reactable only showing the first 100 rows
-reactable::reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
+reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
 
 ```
 
@@ -87,18 +89,24 @@ reactable::reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
 
 Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. We start by filtering the "Kanton" column to keep only the canton of Vaud.
 
+Here are the first 1000 instances of the raw data :
+
 ```{r}
 # Filter by canton Vaud 
 tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
 #check for NAN
 sum(is.na(tourism_vaud))
 #show the data in a table using reactable
-reactable::reactable(head(tourism_vaud, 20))
+reactable(head(tourism_vaud, 1000))
 ```
+
+Note that no missing values were found in the dataset.
 
 ### Tourism Data - Zurich
 
 We filtered the "Kanton" column to keep only the canton of Zurich.
+
+Here are the first 1000 instances of the raw data :
 
 ```{r Tourism Zurich}
 #filter column 'Kanton' for Zurich
@@ -118,38 +126,19 @@ There are 1869 missing values for the two sub-datasets. These missing values com
 
 We are filtering the "Kanton" column and the 'Herkunftsland' column, keeping Zurich and Philippinen for the country of origin.
 
+Here is all the instances of the raw filtered data :
+
 ```{r Tourism Zurich and Philipines}
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
 #show table using reactable
-reactable::reactable(tourism_data_zurich_philippines)
+reactable(tourism_data_zurich_philippines)
 ```
 
-Filtering for 'Philippinen' solved the problem of missing data we had with all countries of origin. The overnight stays are all included throughout the period.
-
-However there had been missing values, we would have used one of the two ways of dealing with the problem. Firstly, we can simply take the section of data after the last missing value, assuming that there is a long enough series of observations to produce meaningful predictions. Secondly, we can replace the missing values with estimates. To do this, we first fit an ARIMA model to the data containing missing values, and then use the model to interpolate the missing observations.
-
-```{r}
-# #Creating a tsibble with missing values
-# data <- tourism_data_zurich_philippines %>%
-#   as_tsibble(key = c(Kanton, Herkunftsland, Monat, Jahr)) %>%
-#   select(Date, value) %>%
-#   fill_gaps()
-# 
-# # Fit an ARIMA model to data with missing values
-# model_fit <- data %>%
-#   model(ARIMA(value))
-# 
-# # Interpolate missing values using the fitted ARIMA model
-# filled_data <- model_fit %>%
-#   interpolate(data)
-# 
-# # Print the data with filled in missing values
-# print(filled_data)
-```
+Filtering for `Philippinen` solved the problem of missing data we had with all countries of origin. The overnight stays are all included throughout the period.
 
 # EDA - Vaud
 
-## Visitors from different countries in Vaud
+## International Visitors in Vaud
 
 The graph shows the monthly number of overnight stays in Vaud from tourists of different countries. The period runs from January 2005 to September 2023.
 
@@ -173,6 +162,7 @@ interactive_plot <- ggplotly(plot_vaud, tooltip = "text", width = 600, height = 
 # Adjust plotly settings 
 interactive_plot <- interactive_plot %>%
   layout(
+    margin = list(l = 60, r = 60, b = 60, t = 80),
     showlegend = FALSE # Remove legend
   )
 
@@ -204,6 +194,7 @@ interactive_plot_total <- ggplotly(plot_vaud_total, width = 600, height = 400)
 # Adjust plotly settings
 interactive_plot_total <- interactive_plot_total %>%
   layout(
+    margin = list(l = 60, r = 60, b = 60, t = 80),
     showlegend = FALSE  # Remove legend if any
   )
 
@@ -236,11 +227,11 @@ vaud_ts <- tourism_vaud_total %>%
 
 The main insights from this decomposition reflect what we have already observed.
 
-\- A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
+-    A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
 
-\- Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
+-   Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
 
-\- A stable residual component until 2020. After this period, there is a slight increase in volatility which may indicate that other events are having an impact on this time series which are not captured by the first two components.
+-   A stable residual component until 2020. After this period, there is a slight increase in volatility which may indicate that other events are having an impact on this time series which are not captured by the first two components.
 
 # EDA - Zurich
 
@@ -327,11 +318,10 @@ tourism_ts <- tourism_data_zurich_philippines %>%
   with(ts(value, frequency = 12, start = decimal_date(min(Date))))
 
 # Decompose the time series
-decomposed <- decompose(tourism_ts)
+decomposed <- decompose(tourism_ts, type = 'multiplicative')
 
 # Plot the decomposed components
-plot(decomposed)
-tourism_ts
+decomposed
 ```
 
 -   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
@@ -374,14 +364,18 @@ This part is about building on your knowledge of time series techniques to model
 
 ## Total number of visitors in Vaud
 
-### ETS model
+In this section we will focus on the total number of visitors in Vaud. We will use the ETS and ARIMA models to forecast the number of visitors in Vaud over a 15-month horizon.
+
+### ETS
 
 The ETS (Error, Trend, Seasonality) forecast model presents numerous advantages in predicting the number of visitors to canton Vaud over a 15-month horizon due to its ease of implementation and reliability of results. The model is based on using trend and seasonality of past data to predict future without request of extra features.
+
 ```{r}
 ets_vaud <- ets(vaud_ts, model = "AAA")
 forecast_ets_vaud <- forecast(ets_vaud, h = 24) %>% plot(main = "Forecast of visitors in Vaud", xlab = "Date", ylab = "Number of visitors")
 ```
-Employing the ETS "AAA" model, characterized by additive consideration of error, trend, and seasonality components, we forecast number of visitors in canton Vaud for 15 months. The forecast generated by the ETS model appears reasonable, it follow trend and seasonality; however, the wide range of the confidence interval indicates a high level of uncertainty surrounding the predictions. 
+
+Employing the ETS "AAA" model, characterized by additive consideration of error, trend, and seasonality components, we forecast number of visitors in canton Vaud for 15 months. The forecast generated by the ETS model appears reasonable, it follow trend and seasonality; however, the wide range of the confidence interval indicates a high level of uncertainty surrounding the predictions.
 
 ### ARIMA
 
@@ -410,7 +404,7 @@ as.data.frame(forecast_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>
 
 Automatically the model ARIMA(5,0,0)(0,1,1) was chosen. The graph shows that the seasonality observed in the historical data continues to manifest itself in the future forecasts, with recurring seasonal peaks and troughs. This demonstrates the robustness of the ARIMA model Forecasts for the next two years (15 months) are represented by the blue line. The violet bands around the blue line represent the forecast confidence interval, indicating the range of values within which future values are likely to lie with a certain probability. Due to the drop observed in 2020, the trend is showing a slight downward trajectory, however, currently, there are no evident reasons for a decrease in the number of visitors.
 
-To capture the positive trend we use model ARIMA (5,1,0)(0,1,1) .Changing  modeled explicitly using a differencing order of 1 in the non-seasonal component provide better flexibility in capturing any underlying trend patterns in the data.This adjustment allows the model to more effectively account for changes in the level of the time series data over time, potentially leading to improved accuracy in forecasting future trends in tourist arrivals in Canton Vaud.
+To capture the positive trend we use model ARIMA (5,1,0)(0,1,1) .Changing modeled explicitly using a differencing order of 1 in the non-seasonal component provide better flexibility in capturing any underlying trend patterns in the data.This adjustment allows the model to more effectively account for changes in the level of the time series data over time, potentially leading to improved accuracy in forecasting future trends in tourist arrivals in Canton Vaud.
 
 ```{r}
 # Fit ARIMA model with specified parametes
@@ -432,7 +426,11 @@ The ARIMA(5,1,0)(0,1,1) model effectively captures both the positive trend and s
 
 ## Zurich and Philipines
 
+In this section, we will focus on the number of visitors from the Philippines to Zurich. We will use the Naive as a benchmark for ETS and ARIMA models to forecast the number of visitors from the Philippines to Zurich over a 15-month horizon.
+
 ### Forecast without dealing with Covid
+
+As we have seen, Covid has had a significant impact on the number of tourists in Zurich. We will first forecast the number of tourists without taking into account the Covid period. This will allow us to see the impact of the pandemic on the forecasts.
 
 #### Naive Forecast
 
@@ -454,21 +452,22 @@ plot <- forecast %>%
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
-
-#get AIC metric
-metrics_naive <- fit %>% accuracy()
-# Display accuracy metrics in an HTML table
-metrics_naive %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-
 ```
 
 This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach.
 
 The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
 
-#### Exponential Smoothing
+We can see here the metrics of the naive model :
+```{r}
+metrics_naive <- fit %>% accuracy()
+# Display accuracy metrics in an HTML table
+metrics_naive <- metrics_naive %>%
+  kable("html", caption = "Naive Model Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+#### ETS
 
 -   Why additive errors ? Because the variance of the errors is constant over time no ?
 
@@ -489,17 +488,20 @@ plot <- forecast %>%
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
+```
 
+Clearly see here that the confidence interval is too big, almost like a naive forecast, therefore as suspected we will move to a *multiplicative* seasonality model.
+
+We see here the metrics of the ETS AAA model :
+```{r}
 # Calculate the accuracy of the training set
 metrics_ets_AAA <- fit %>% accuracy()
 
 # Display accuracy metrics in an HTML table
-metrics_naive %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
+metrics_ets_AAA %>%
+  kable("html", caption = "ETS AAA Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
-
-Clearly see here that the confidence interval is too big, almost like a naive forecast
 
 Why trend dp and seaso M ? - Trend is present so A - Seasonality is present and growing over time so Multiplicative was chosen
 
@@ -514,6 +516,11 @@ fit <- tourism_ts %>%
 # Forecast the next 2 years periods
 forecast <- fit %>%
   forecast(h = 15)
+
+# Extract the forecast for ETS_M_seaso_Ad
+forecast_ETS_M_seaso_Ad <- forecast %>%
+  filter(.model == "ETS_M_seaso_Ad") %>%
+  as.data.frame()
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
 plot <- forecast %>%
   autoplot(tourism_ts, level = 90, color = "blue", alpha = 0.5) +
@@ -521,81 +528,98 @@ plot <- forecast %>%
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
 plot
-
-# Calculate the accuracy of the training set
-metrics_ets <- fit %>% accuracy()
-
-
-# Display accuracy metrics in an HTML table
-metrics_ets %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-##### Thus Chosen Model :
-
+We can see here the metrics of the two ETS models (AAM and AAdM) :
 ```{r}
-fit <- tourism_ts %>%
-  model(ETS_M_seaso = ETS(value ~ error("A") + trend("Ad") + season("M"))) #multiplicative seasonality)
-# Forecast the next 2 years periods
-forecast <- fit %>%
-  forecast(h = 15)
-# Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
-plot <- forecast %>%
-  autoplot(tourism_ts, alpha = 0.5) +
-  labs(title = "Forecast of tourists from Philipines to Zurich",
-       x = "Date",
-       y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
-plot
+# Extract AIC values
+aic_values <- fit %>%
+  glance() %>%
+  select(.model, AIC)
+
+# Print the AIC values
+print(aic_values)
+
+# Display AIC values with forecast metrics
+metrics <- fit %>% accuracy()
+metrics_with_aic <- metrics %>%
+  left_join(aic_values, by = ".model")
+
+# Display metrics with AIC in an HTML table
+metrics_ets <- metrics_with_aic %>%
+  kable("html", caption = "Model Accuracy Metrics with AIC Values") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+metrics_ets
 ```
+
+We observe that the damped model is better on almost all metrics.
 
 #### ARIMA
 
-Question : Do we need to differentiate the data ?
+We fit 3 different models
 
+- one with auto-arima
+- Anoter one with auto-arima but with seasonality added
+- And one with auto-arima but with stepwise and approximation options turned off for a more thorough search.
+
+NOTE A REFORMULER PLUS PETIT
+Reasons to Turn Off Stepwise and Approximation
+Accuracy Over Speed: If computational resources and time are not a constraint, turning off these options can lead to more accurate and reliable model selection and parameter estimation.
+Better Model Selection: An exhaustive search (with stepwise = FALSE) and exact estimation (with approximation = FALSE) increase the chances of identifying the true underlying model, which can improve forecast accuracy.
+Complex Data: For datasets with complex patterns or when high accuracy is critical, the benefits of thorough model exploration and exact estimation outweigh the increased computational cost.
 ```{r}
 # Fit an automatic ARIMA model
 fit_arima <- tourism_ts %>%
-  model(ARIMA_auto = ARIMA(value))
+  model(ARIMA_auto = ARIMA(value),
+        ARIMA_auto_seasonal = ARIMA(value~season()),
+        ARIMA_auto_stepwise = ARIMA(value, stepwise = FALSE, approximation = FALSE))
 
-# Forecast the next 2 years (24 months)
+# Forecast the next 15 months
 forecast_arima <- fit_arima %>%
   forecast(h = 15)
 
 # Plot the forecasts along with the historical data
 plot_arima <- forecast_arima %>%
-  autoplot(tourism_ts, alpha = 0.5) +
+  autoplot(tourism_ts, alpha = 0.3) +
   labs(title = "ARIMA Forecast of Tourists from the Philippines to Zurich",
        x = "Date",
        y = "Number of Tourists") +
   guides(colour = guide_legend(title = "Forecast"))
 plot_arima
+```
+
+We see that that the Auto-ARIMA with seasonality is more negative than the two others and that the stepwise and approximation options turned off is more positive. The auto-arima alone is in between both.
+
+Here are the metrics of the ARIMA model :
+```{r}
+# Extract AIC values
+aic_values <- fit_arima %>%
+  glance() %>%
+  select(.model, AIC)
 
 # Calculate the accuracy of the training set
 metrics_arima <- fit_arima %>% accuracy()
 
+# Combine accuracy metrics with AIC values
+metrics_arima <- metrics_arima %>%
+  left_join(aic_values, by = ".model")
 
-# Display accuracy metrics in an HTML table
-metrics_arima %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
+# Display accuracy metrics with AIC values in an HTML table
+metrics_arima_table <- metrics_arima %>%
+  kable("html", caption = "Model Accuracy Metrics with AIC Values") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+metrics_arima_table
 ```
 
-Ugly forecast, confidence interval is too big
+We observe with the metrics that the more complex model is the best by almost metrics but followed very closely by the auto-arima with seasonality model. The lowest AIC for the more complex model is a good sign that it is the best model.
 
-```{r}
-# using auto.arima with stepwise and approximation options turned off for a more thorough search
-fit_updated <- auto.arima(tourism_ts, seasonal = TRUE, stepwise = FALSE, approximation = FALSE)
-summary(fit_updated)
-```
+### Forecasting Amidst the Covid-19 Pandemic
 
-### Forecast but dealing with Covid now
+Now after those forecast we will take into account the Covid period and see if it will provide a better forecast.
 
-#### Special Event- Covid impact
-
-Explanation ![](images/clipboard-4239087395.png)
-
-##### How philipines dealt with it
+#### How philipines dealt with it
 
 In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
 
@@ -605,11 +629,11 @@ As for travel, the Philippines continues to navigate the balance between safety 
 
 Question : How to deal with this blackswan event ?
 
-##### Covariates
+#### Covariates
 
 TEXT A PAUFINER Covariate Adjustment Adjust your forecasts to account for the impact of COVID-19 by including covariates that capture the effects of the pandemic. These covariates can be used to adjust the forecasts based on the observed changes in the data due to COVID-19. For example, you can include a covariate that captures the effect of lockdowns or travel restrictions on tourism data. Scenario Analysis Conduct scenario analysis to explore the potential impact of different COVID-19 scenarios on your forecasts. By considering a range of possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity Analysis Evaluate the sensitivity of your forecasts to changes in key assumptions or parameters. By conducting sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
-###### Data Integration
+#### Data Integration
 
 The Oxford COVID-19 Government Response Tracker (OxCGRT) provides valuable data on government responses to the COVID-19 pandemic, including a Stringency Index that quantifies the severity of lockdown measures. Let me provide more details about this index:
 
@@ -617,6 +641,7 @@ The Oxford COVID-19 Government Response Tracker (OxCGRT) provides valuable data 
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
+Here you can observe the stringency index for the Philippines and Switzerland :
 ```{r}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines
@@ -663,17 +688,24 @@ ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippi
        y = "Stringency Index") +
   scale_color_manual(values = c("#3C5B6F", "darkred"),
                      labels = c("Philippines", "Switzerland"))
+```
+We see that philipines had a higher stringency index than Switzerland. 
 
+You can observe here the resulted data from the merge of the stringency index and the tourism data :
+```{r}
 #show merge data using reactable
 reactable(merged_data)
 ```
 
-###### Model Selection
+#### Finding a Model
 
-Choose a forecasting model that can incorporate exogenous variables (covariates). Models such as:
+Choose a forecasting model that can incorporate exogenous variables (covariates).
 
--   Multiple Regression Analysis: Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
+#####  Multiple Regression Analysis
 
+Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
+
+Here is a summary of the effect of the variables on the number of tourists from the Philippines to Zurich :
 ```{r}
 # Fit a multiple regression model
 model <- lm(value ~ avg_stringency_index_PH + avg_stringency_index_SW, data = merged_data)
@@ -687,11 +719,15 @@ forecast_values <- predict(model, newdata = merged_data)
 #us gtsummary to show the summary of the model
 model %>%
   gtsummary::tbl_regression()
+```
 
+We observe that the p-value are lower for switzerland than for philipines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for switzerland and 5.9 for philipines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
+
+We can observe here the metrics:
+```{r}
 #create a table with the metrics of the model and show it as an html
 model_metrics <- model %>%
   broom::glance()
-model_metrics
 
 # show html table with metrics
 model_metrics %>%
@@ -699,7 +735,14 @@ model_metrics %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
--   ARIMAX (Autoregressive Integrated Moving Average with Exogenous Variables): Suitable for handling time series data with external influences.
+BLABLABLA explain metrics
+The way higher AIC shows that this model is not the best.
+
+##### ARIMAX 
+
+We try here to integrate the stringency index as an exogenous variable in the ARIMA model. This will allow us to account for the impact of COVID-19 on the number of tourists from the Philippines to Zurich.
+
+We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
 
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -711,7 +754,7 @@ exog_data <- cbind(merged_data$avg_stringency_index_PH, merged_data$avg_stringen
 # Check if lengths of tourism_ts and exog_data match
 if (length(tourism_ts) == nrow(exog_data)) {
   # Fit an ARIMAX model
-  model <- auto.arima(tourism_ts, xreg = exog_data, seasonal = TRUE)
+  model <- auto.arima(tourism_ts, xreg = exog_data, seasonal = TRUE, stepwise = FALSE, approximation = FALSE)
   
   # Summary of the model
   summary(model)
@@ -721,6 +764,14 @@ if (length(tourism_ts) == nrow(exog_data)) {
   
   forecast_values <- forecast(model, xreg = future_exog, h = 24)
   
+  # Convert the forecast to a data frame
+  forecast_arimax <- as.data.frame(forecast_values)
+  
+  # Rename the columns for clarity
+  colnames(forecast_arimax) <- c("Point Forecast", "Lo 80", "Hi 80",
+                                 "Lo 95", "Hi 95")
+  forecast_arimax$Date <- seq(as.Date("2023-10-01"), by = "month",
+                              length.out = 15)
   # Plot the forecast along with the actual data using autoplot from the forecast package
   plot_forecast <- autoplot(forecast_values, series = "Forecast") +
     autolayer(tourism_ts, series = "Actual Data") +
@@ -729,12 +780,8 @@ if (length(tourism_ts) == nrow(exog_data)) {
          y = "Number of Tourists") +
     guides(colour = guide_legend(title = "Data Type"))
   
-  print(plot_forecast)
-  
-  # Print forecasted values
-  print(forecast_values)
-  
-  # Calculate evaluation metrics on the training data
+  plot_forecast
+    # Calculate evaluation metrics on the training data
   residuals <- residuals(model)
   mae <- mean(abs(residuals))
   mape <- mean(abs(residuals / tourism_ts)) * 100
@@ -752,7 +799,10 @@ if (length(tourism_ts) == nrow(exog_data)) {
 } else {
   stop("Length of tourism_ts and exog_data do not match. Please check the data.")
 }
+```
 
+Here are the metrics of the ARIMAX model with the metrics of the ARIMA model for comparison :
+```{r}
 #show metric in html
 model_metrics <- data.frame(
   Model = "ARIMAX",
@@ -768,42 +818,104 @@ metrics_arimax <- model_metrics %>%
   kable("html", caption = "Model Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 metrics_arimax
+metrics_arima_table
 ```
 
--   State Space Models/Structural Time Series Model: These models are flexible in handling multiple covariates with varying impacts over time.
-
-##### Incorporating Dummy Variables
-
-Introduce dummy variables into your forecasting models to account for the impact of COVID-19. These variables can be set to 1 for the periods affected by the pandemic and 0 otherwise. This approach allows the model to differentiate the impact of COVID-19 from normal variations in the data.
+Summary
+Best in MAE and MAPE: ARIMAX
+Best in RMSE: ARIMA_auto_stepwise
+Best in AIC: ARIMA_auto_stepwise
+Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, while ARIMAX excels in MAE and MAPE. Depending on which metric is prioritized, either ARIMAX or ARIMA_auto_stepwise would be the preferred model.
 
 #### Other ideas
 
+A Ddeveloper, pq on a pas choisi, bblabla, ...
+- Dummy variable for the covid period. We could have a dummy variable that takes the value 1 during the covid period and 0 otherwise. This would allow the model to adjust the forecasts to reflect the changes in the data due to COVID-19.
 -   Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
 -   Delete the timestamp of the covid period and use fill_gaps() to fill the missing values and then use the a model to predict the missing values.
--   If we use the ARIMA model, we can use covariates to account for the impact of COVID-19. By including a dummy variable that captures the effect of the pandemic, we can adjust the forecasts to reflect the changes in the data due to COVID-19.
+
 
 # Model Selection
+## Vaud
+Implement model selection metrics comparison,blabla and logic behind it
 
-Use Information Criteria for Model Comparison: Evaluate models based on criteria such as AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
-
-```{r}
-metrics_naive %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
+## Zurich and Philipines
+To reformulate !!
+Use Information Criteria for Model Comparison: Evaluate models based on criteria such as RMSE, MAE, MAPE, AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
 
 ```{r}
-metrics_ets %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
-
-```{r}
-metrics_arima %>%
-  kable("html", caption = "Model Accuracy Metrics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
-
-```{r}
+metrics_naive
+metrics_ets
+metrics_arima_table
 metrics_arimax
 ```
+
+Based on the comparison of the metrics:
+
+- ETS_M_seaso_Ad stands out with the lowest MAE (48.9) and RMSE (74.7), making it the most accurate model in terms of absolute and square error metrics. However, its MAPE (105) is not as low as the ARIMAX model's MAPE (74.9).
+- ARIMAX has a competitive AIC (2744) and a lower MAPE (74.9) compared to the ETS models, but a higher MAE (65) and RMSE (105) than ETS_M_seaso_Ad.
+
+Given that the primary goal is to predict the number of visitors accurately:
+
+- ETS_M_seaso_Ad is recommended because it has the lowest MAE and RMSE, indicating more precise predictions, which are crucial for ensuring accurate and actionable insights for decision-making in Zurich's tourism sector.
+- Although the ARIMAX model has a competitive AIC and a reasonable MAPE, its MAE and RMSE are not as competitive as the ETS_M_seaso_Ad model.
+
+Using both forecast hand in hand could be a better approach to have a more robust forecast than selecting only one model.
+
+Here are the forecasted values for the two models :
+```{r}
+# Assuming forecast_arimax and forecast_ETS_M_seaso_Ad are already available
+
+# Rename the columns for clarity
+colnames(forecast_arimax) <- c("ARIMAX_Forecast", "ARIMAX_Lo_80", "ARIMAX_Hi_80", "ARIMAX_Lo_95", "ARIMAX_Hi_95", "Date")
+
+# Convert the 'Date' column to Date type for merging
+forecast_arimax$Date <- as.Date(forecast_arimax$Date)
+
+# Extract the relevant columns from forecast_ETS_M_seaso_Ad
+forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
+  select(Date = index, ETS_M_seaso_Ad_Forecast = .mean)
+
+# Convert the 'Date' column to Date type for merging
+forecast_ETS_M_seaso_Ad$Date <- as.Date(paste(forecast_ETS_M_seaso_Ad$Date, "01", sep = "-"), format = "%Y %b-%d")
+
+# Merge the two data frames based on the Date
+combined_forecast <- merge(forecast_arimax, forecast_ETS_M_seaso_Ad, by = "Date")
+
+# Calculate the delta between the two forecasts
+combined_forecast <- combined_forecast %>%
+  mutate(Delta = ETS_M_seaso_Ad_Forecast - ARIMAX_Forecast)
+
+# Remove the unnecessary columns
+combined_forecast <- combined_forecast %>%
+  select(Date, ARIMAX_Forecast, ETS_M_seaso_Ad_Forecast, Delta)
+
+# Display the combined table using reactable
+reactable(
+  combined_forecast,
+  columns = list(
+    Date = colDef(name = "Date"),
+    ARIMAX_Forecast = colDef(
+      name = "ARIMAX Forecast",
+      format = colFormat(digits = 2)
+    ),
+    ETS_M_seaso_Ad_Forecast = colDef(
+      name = "ETS_M_seaso_Ad Forecast",
+      format = colFormat(digits = 2)
+    ),
+    Delta = colDef(
+      name = "Delta",
+      format = colFormat(digits = 2)
+    )
+  ),
+  defaultPageSize = 5,
+  highlight = TRUE,
+  striped = TRUE,
+  bordered = TRUE,
+  filterable = TRUE,
+  searchable = TRUE,
+  sortable = TRUE,
+  resizable = TRUE
+)
+```
+
