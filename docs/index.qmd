@@ -35,7 +35,7 @@ The main objectives of this project is to predict :
 
 -   The overnight stays of the visitors in Vaud, from October 2023 until December 2024.
 
--   The overnight satys of visitors from Philippines to Zürich, from October 2023 until December 2024.
+-   The overnight stays of visitors from Philippines to Zürich, from October 2023 until December 2024.
 
 # Data
 
