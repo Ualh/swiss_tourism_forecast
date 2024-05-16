@@ -1,8 +1,8 @@
 ---
 title: Zurich and Vaud by the Numbers - Predictive Insights into Tourism Dynamic
 author:
- - Name I, First Name I
- - Name II, First Name II
+ - Valeriia Bilousko, Urs Hurni, Jayesh Smith
+ - Anastasia Pushkarev, Emeline Raimon
 institute : University of Lausanne
 date: today
 title-block-banner: "#0095C8" #chosen for the university of lausanne
