@@ -170,7 +170,7 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-The time plot reveals some interesting features. - According to the graph, tourists come mainly from Switzerland. The second visitor country is France. - There are large dips in the number of overnight stays at the beginning of each year -- these are due to holiday effects. - There was a important drop during the period in 2020 -- this was due to the COVID pandemic. - For swiss tourists, there is visible increasing trend before and after the pandemic.
+The time plot reveals some interesting features. - According to the graph, tourists come mainly from Switzerland. The second visitor country is France. - There are large dips in the number of overnight stays at the beginning of each year -- these are due to holiday effects. - There was an important drop during the period in 2020 -- this was due to the COVID pandemic. - For swiss tourists, there is visible increasing trend before and after the pandemic.
 
 This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin. Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an *increasing* trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this series would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
 
@@ -273,7 +273,7 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. The yellow curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period. There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide. At first glance, there are regular seasonal peaks for most countries which suggests also the presence of seasonality in tourism in the canton of Zurich.
+As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. The yellow curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period. There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide. At first glance, there are regular seasonal peaks for most countries which also suggest the presence of seasonality in tourism in the canton of Zurich.
 
 ## Zurich and Philippines Visitors
 
@@ -348,7 +348,7 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 #tourism_ts %>% gg_subseries(value) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 ```
 
-The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to a number of factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
+The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to several factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
 
 #### Trend
 
@@ -356,7 +356,7 @@ There is an upward trend until around 2020, when it falls sharply because of the
 
 # Modelling
 
-This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, colinearity, covariates, special events, etc. Remember the following steps:
+This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, collinearity, covariates, special events, etc. Remember the following steps:
 
 (a) Aggregation choice for hierarchical time series
 (b) Model building
