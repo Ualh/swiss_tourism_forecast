@@ -275,7 +275,7 @@ interactive_plot
 
 As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. The yellow curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period. There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide. At first glance, there are regular seasonal peaks for most countries which suggests also the presence of seasonality in tourism in the canton of Zurich.
 
-## Zurich and Philippinens Visitors
+## Zurich and Philippines Visitors
 
 This graph shows only visitors from the Philippines, as this is the country of interest in our analysis.
 
