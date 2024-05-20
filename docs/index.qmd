@@ -275,11 +275,11 @@ interactive_plot
 
 ### Pattern
 
+We choose a multiplicative model for the STL decomposition of the number of trips from the Philippines to Zurich because the data (previous plot) shows increasing variance and larger fluctuations as the number of trips grows, suggesting that seasonal and trend components scale proportionally with the overall level of the series. *check the appendix for the additive decomposition and further seasonal graph*
+
 #### Decomposition
 
-The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
-
-```{r Decomposition-zh}
+```{r}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines %>%
   arrange(Date) %>%
@@ -287,19 +287,16 @@ tourism_ts <- tourism_data_zurich_philippines %>%
   complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
   replace_na(list(value = 0)) %>%  # Replace NA values if there are any
   # Create a time series object
-  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
+  with(ts(log(value), frequency = 12, start = decimal_date(min(Date))))
 
-# Decompose the time series
-decomposed <- decompose(tourism_ts, type = 'multiplicative')
+# Perform STL decomposition on the transformed data
+tourism_stl <- stl(tourism_ts, s.window = "periodic")
 
-# Plot the decomposed components
-decomposed
-
-# Perform STL decomposition
-stl(tourism_ts, s.window = "periodic") %>% 
-  autoplot() +
-  labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists from Philippines to Zurich") +
+# Plotting the results (transforming back by exponentiating)
+autoplot(tourism_stl) +
+  labs(x = "Date", y = "Number of tourists", title = "Multiplicative STL Decomposition for number of tourists from Philippines to Zurich") +
   theme_minimal()
+
 ```
 
 -   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
@@ -307,15 +304,6 @@ stl(tourism_ts, s.window = "periodic") %>%
 -   A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
 
 #### Seasonality
-
-Seasonal sub-series plot permit to better visualize the monthly fluctuations of each year, from 2005 to 2023.
-
-```{r}
-# Plot the seasonality in one chart
-ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE) +
-  scale_color_viridis_d() +
-  theme_minimal()
-```
 
 ```{r}
 # several chart per month to see the seasonality
@@ -327,6 +315,7 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 ```
 
 The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to several factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
+
 
 #### Trend
 
@@ -981,3 +970,42 @@ interactive_plot <- interactive_plot %>%
 # Display the interactive plot
 interactive_plot
 ```
+
+## Additive STL
+The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
+
+```{r Decomposition-zh}
+# Convert data to a time series object
+tourism_ts <- tourism_data_zurich_philippines %>%
+  arrange(Date) %>%
+  # Ensure data is complete and monthly
+  complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
+  replace_na(list(value = 0)) %>%  # Replace NA values if there are any
+  # Create a time series object
+  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
+
+# Decompose the time series
+decomposed <- decompose(tourism_ts, type = 'multiplicative')
+
+# Plot the decomposed components
+decomposed
+
+# Perform STL decomposition
+stl(tourism_ts, s.window = "periodic") %>% 
+  autoplot() +
+  labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists from Philippines to Zurich") +
+  theme_minimal()
+```
+
+## Seasonality ZH
+
+Seasonal sub-series plot permit to better visualize the monthly fluctuations of each year, from 2005 to 2023.
+
+```{r}
+# Plot the seasonality in one chart
+ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE) +
+  scale_color_viridis_d() +
+  theme_minimal()
+```
+
+We clearly observe here that the seasonality is not constant over time.
