@@ -17,7 +17,7 @@ format:
     code-summary: "Click to show code"
     # pdf: default # use this if you want to render pdfs instead
 abstract: |
-  The following Forecasting project focuses on ...
+  The following Forecasting project focuses on forecasting the overnight stays of visitors in the Swiss canton of Vaud and from the Philippines to Zurich from October 2023 to December 2024. Utilizing comprehensive tourism data, the project reveals insights into the trends and seasonal patterns in both regions, emphasizing the varied impacts of the COVID-19 pandemic on international tourism dynamics. The forecasting phase employs Error, Trend, Seasonality (ETS) and AutoRegressive Integrated Moving Average (ARIMA) models, which are chosen based on their ability to accurately capture underlying data patterns, including seasonality and trend shifts due to global events. The project's findings provide actionable insights for tourism management and strategic planning in the regions studied, highlighting the need for adaptive strategies in response to global disruptions such as pandemics. 
 ---
 
 ```{r loading libraries, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
@@ -180,9 +180,7 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-The time plot reveals some interesting features. - According to the graph, tourists come mainly from Switzerland. The second visitor country is France. - There are large dips in the number of overnight stays at the beginning of each year -- these are due to holiday effects. - There was an important drop during the period in 2020 -- this was due to the COVID pandemic. - For swiss tourists, there is visible increasing trend before and after the pandemic.
-
-This time plot takes the total number of tourists in the canton of Vaud, combining all countries of origin. Here, we can better observe the seasonal pattern in the data. The number of tourists decreases at the end and beginning of each year and increases in the middle of the year during the summer holidays. There is also an *increasing* trend pattern if we do not take into account the period of the pandemic in 2020 which caused an important drop in travel and therefore tourism in Vaud. We'll come back to this outlier later. Any forecasts of this series would need to capture the seasonal pattern, and the fact that the trend is changing over the period.
+The time plot shows key trends in tourist visits to the canton of Vaud. Mainly, tourists are from Switzerland, followed by France. There are noticeable dips in overnight stays at the year's start, typically due to holidays, with a significant drop in 2020 due to the COVID pandemic. Swiss tourists show a rising trend excluding the pandemic period. Overall, the data displays a seasonal pattern with fewer tourists at year-end and a peak during summer. Future forecasts should consider these seasonal variations and changing trends.
 
 Graphical view of total number of tourists in canton Vaud :
 
@@ -1019,3 +1017,13 @@ model_metrics %>%
 
 BLABLABLA explain metrics
 The way higher AIC shows that this model is not the best.
+
+# Conclusion
+
+The project analyzed tourism data to predict the number of overnight stays of tourists in Vaud and from the Philippines to Zurich in the period from October 2023 to December 2024. The study focused on the cantons of Vaud and Zurich, adapting the analysis to specific regional and international tourism dynamics.
+
+A preliminary analysis of the data revealed key patterns and trends, such as the significant impact of seasonal fluctuations and the COVID-19 pandemic on tourist behavior. In Vaud, the presence of a recurring seasonal pattern and a changing trend has highlighted the need for models that can adapt to such fluctuations. The analysis conducted in Zurich revealed specific periods of high tourist activity that correspond to the holiday calendar in the Philippines, which provided valuable information for the development of targeted tourism strategies.
+
+The use of forecasting models such as ETS and ARIMA has demonstrated their effectiveness in identifying these complex patterns, providing reliable forecasts of future tourist flows. The models were selected based on their ability to account for seasonality, trends and significant impacts of global events such as the pandemic, which were important for accurate forecasting.
+
+In conclusion, it should be noted that this analysis has revealed a special impact of global events on tourism. This data is important for strategic planning and decision-making in the tourism cantons of Vaud and Zurich. In the future, we recommend continued monitoring and adaptive forecasting to take into account unforeseen global impacts, ensuring sustainable growth of the tourism industry in these regions.
