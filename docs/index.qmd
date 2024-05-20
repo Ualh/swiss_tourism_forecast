@@ -43,7 +43,7 @@ The main objectives of this project is to predict :
 
 Here we load the data and clean it. We will focus on the data for Vaud and Zurich, as well as the data for the Philippines. 
 
-```{r}
+```{r load}
 # Load the data in folder data named Dataset_tourism.xlsx)
 tourism_data <- readxl::read_xlsx(here("data/Dataset_tourism.xlsx"))
 
@@ -88,7 +88,7 @@ Given the two objectives of the project, we are going to filter the initial data
 
 Here are the first 1000 instances of the raw data :
 
-```{r}
+```{r vaud data}
 # Filter by canton Vaud 
 tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
 #check for NAN
@@ -119,7 +119,7 @@ Thus, we are filtering the "Kanton" column and the 'Herkunftsland' column, keepi
 
 Here is all the instances of the raw filtered data :
 
-```{r Tourism Zurich and Philippines}
+```{r Tourism zh and ph}
 #filter column 'Kanton' for Zurich
 tourism_data_zurich <- tourism_data_no_total %>% filter(Kanton == "Zürich")
 #check for NAN
@@ -152,7 +152,7 @@ Filtering for `Philippinen` solved the problem of missing data we had with all c
 
 The graph shows the monthly number of overnight stays in Vaud from tourists of different countries. The period runs from January 2005 to September 2023.
 
-```{r vaud all}
+```{r vaud all plot}
 # Create the ggplot object
 plot_vaud <- tourism_vaud %>% 
   filter(Herkunftsland != 'Herkunftsland - Total') %>%
@@ -186,7 +186,7 @@ This time plot takes the total number of tourists in the canton of Vaud, combini
 
 Graphical view of total number of tourists in canton Vaud :
 
-```{r vaud aggregated}
+```{r vaud aggregated plot}
 tourism_vaud_total <- tourism_vaud %>%
   filter(Herkunftsland == 'Herkunftsland - Total') %>%
   select(-c(Herkunftsland, Kanton, Monat, Jahr))
@@ -216,7 +216,7 @@ interactive_plot_total
 
 We have process an additive decomposition of the time series into three components: *trend, seasonality and residual*. These components will allow us to understand how they contribute to the variations observed in Swiss tourism data.
 
-```{r decomposition}
+```{r vaud decomposition}
 # Convert data to a time series object
 vaud_ts <- tourism_vaud_total %>%
   arrange(Date) %>%
@@ -251,7 +251,38 @@ As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United 
 
 This graph shows only visitors from the Philippines, as this is the country of interest in our analysis.
 
-```{r}
+```{r zh eda}
+##### EDA ZH ALL #####
+# Preparing the data
+#removing value in column 'Herkunftsland' as it is just the whole of Switzerland
+data <- tourism_data_zurich %>%
+  filter(!is.na(value)) %>%  # Removing rows with NA values in the 'value' column
+  mutate(Monat = month(Date, label = TRUE, abbr = TRUE),  # Extract month 
+         Jahr = year(Date)) %>%  # Extract year from Date
+  group_by(Herkunftsland, Date) %>%  # Group by country and date
+  summarise(Trips = sum(value), .groups = 'drop')  # Summing up trips for each country per date
+
+p <- ggplot(data, aes(x = Date, y = Trips, group = Herkunftsland,
+                      color = Herkunftsland == "Philippinen",
+                      text = paste("Country:", Herkunftsland, "<br>Trips:", Trips))) +  # Added text for tooltip
+  geom_line(show.legend = FALSE) +
+    scale_color_viridis_d() +  # Use viridis color palette
+  labs(title = "Number of Trips from Each Country to Zurich",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal()
+
+# Convert to an interactive plotly object
+interactive_plot_zh_all <- ggplotly(p, tooltip = "text", width = 600, height = 600)
+
+# Adjust plotly settings 
+interactive_plot_zh_all <- interactive_plot %>%
+  layout(
+    margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
+    showlegend = FALSE  # Show legend
+  )
+
+##### EDA ZH PHILIPPINES #####
 # Use tourism_data_zurich_philippines data to plot the values in y axis and Date in x axis
 p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
   geom_line(color = viridis(1)) +  # Use viridis color palette for a single line
@@ -279,7 +310,7 @@ We choose a multiplicative model for the STL decomposition of the number of trip
 
 #### Decomposition
 
-```{r}
+```{r zh decomp}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines %>%
   arrange(Date) %>%
@@ -297,6 +328,20 @@ autoplot(tourism_stl) +
   labs(x = "Date", y = "Number of tourists", title = "Multiplicative STL Decomposition for number of tourists from Philippines to Zurich") +
   theme_minimal()
 
+# Convert data to a time series object
+tourism_ts <- tourism_data_zurich_philippines %>%
+  arrange(Date) %>%
+  # Ensure data is complete and monthly
+  complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
+  replace_na(list(value = 0)) %>%  # Replace NA values if there are any
+  # Create a time series object
+  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
+
+# Perform STL decomposition
+stl_zh <- stl(tourism_ts, s.window = "periodic") %>% 
+  autoplot() +
+  labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists from Philippines to Zurich") +
+  theme_minimal()
 ```
 
 -   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
@@ -305,7 +350,7 @@ autoplot(tourism_stl) +
 
 #### Seasonality
 
-```{r}
+```{r seaso zh}
 # several chart per month to see the seasonality
 ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 
@@ -894,63 +939,15 @@ There are 1869 missing values for the two sub-datasets. These missing values com
 The graph shows the monthly number of overnight stays in Zurich from tourists of different countries.
 
 ```{r}
-# Preparing the data
-#removing value in column 'Herkunftsland' as it is just the whole of Switzerland
-data <- tourism_data_zurich %>%
-  filter(!is.na(value)) %>%  # Removing rows with NA values in the 'value' column
-  mutate(Monat = month(Date, label = TRUE, abbr = TRUE),  # Extract month 
-         Jahr = year(Date)) %>%  # Extract year from Date
-  group_by(Herkunftsland, Date) %>%  # Group by country and date
-  summarise(Trips = sum(value), .groups = 'drop')  # Summing up trips for each country per date
-
-p <- ggplot(data, aes(x = Date, y = Trips, group = Herkunftsland,
-                      color = Herkunftsland == "Philippinen",
-                      text = paste("Country:", Herkunftsland, "<br>Trips:", Trips))) +  # Added text for tooltip
-  geom_line(show.legend = FALSE) +
-    scale_color_viridis_d() +  # Use viridis color palette
-  labs(title = "Number of Trips from Each Country to Zurich",
-       x = "Date",
-       y = "Number of Trips") +
-  theme_minimal()
-
-# Convert to an interactive plotly object
-interactive_plot <- ggplotly(p, tooltip = "text", width = 600, height = 600)
-
-# Adjust plotly settings 
-interactive_plot <- interactive_plot %>%
-  layout(
-    margin = list(l = 60, r = 60, b = 60, t = 80),  # Adjust margins
-    showlegend = FALSE  # Show legend
-  )
-
 # Display the interactive plot
-interactive_plot
+interactive_plot_zh_all
 ```
 
 ## ZH -Additive STL
 The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
 
-```{r Decomposition-zh}
-# Convert data to a time series object
-tourism_ts <- tourism_data_zurich_philippines %>%
-  arrange(Date) %>%
-  # Ensure data is complete and monthly
-  complete(Date = seq.Date(min(Date), max(Date), by = "month")) %>%
-  replace_na(list(value = 0)) %>%  # Replace NA values if there are any
-  # Create a time series object
-  with(ts(value, frequency = 12, start = decimal_date(min(Date))))
-
-# Decompose the time series
-decomposed <- decompose(tourism_ts, type = 'multiplicative')
-
-# Plot the decomposed components
-decomposed
-
-# Perform STL decomposition
-stl(tourism_ts, s.window = "periodic") %>% 
-  autoplot() +
-  labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists from Philippines to Zurich") +
-  theme_minimal()
+```{r}
+stl_zh
 ```
 
 ## ZH - Seasonality 
