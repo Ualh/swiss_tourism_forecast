@@ -17,7 +17,7 @@ format:
     code-summary: "Click to show code"
     # pdf: default # use this if you want to render pdfs instead
 abstract: |
-  The following Forecasting project focuses on applying forecasting techniques to predict tourism trends in Zurich. This analysis aims to harness the power of historical data combined with forecasting algorithms to provide actionable insights into future tourism patterns. We engage in comprehensive data preparation, explore various predictive models, and conduct a detailed evaluation of their forecasting accuracy. The project encapsulates the challenge of turning complex data into understandable and strategic information, crucial for effective decision-making in Zurich's tourism sector.
+  The following Forecasting project focuses on ...
 ---
 
 ```{r loading libraries, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
@@ -45,45 +45,7 @@ The main objectives of this project is to predict :
 
 The dataset contains information about the overnights stays by tourists in the various Swiss cantons. It indicates the tourist's country of origin, the canton of stay, the month, the year and the total number of overnights stays.
 
-As the dataset provided is in German, we have translated the data in English to make it more intuitive and understandable for everyone. Then, we created a new 'Date' column, year-month-day, which corresponds to the correct format to be able to make predictions.
-
-Here are the first 1000 instances of the raw data :
-
-```{r Tourism ALL}
-# Load the data in folder data named Dataset_tourism.xlsx)
-tourism_data <- readxl::read_xlsx(here("data/Dataset_tourism.xlsx"))
-
-#removing value 'Herkunftsland - Total' in column 'Herkunftsland' as it is just the total
-#tourism_data <- tourism_data %>% filter(Herkunftsland != "Herkunftsland - Total")
-#print unique values in month column
-unique(tourism_data$Monat)
-# change ' [1] "Januar"    "Februar"   "März"      "April"     "Mai"       "Juni"      "Juli"      "August" "September" "Oktober"   "November"  "Dezember" into english month'
-tourism_data$Monat <- tourism_data$Monat %>% recode_factor(
-  "Januar" = "January",
-  "Februar" = "February",
-  "März" = "March",
-  "April" = "April",
-  "Mai" = "May",
-  "Juni" = "June",
-  "Juli" = "July",
-  "August" = "August",
-  "September" = "September",
-  "Oktober" = "October",
-  "November" = "November",
-  "Dezember" = "December"
-)
-#add date type column for plotting purposes
-tourism_data <- tourism_data %>% mutate(Date = dmy(paste("01", Monat, Jahr)))
-# filtering out 'Herkunftsland - Total' in column 'Herkunftsland' as it is just the total
-tourism_data_no_total <- tourism_data %>% filter(Herkunftsland != "Herkunftsland - Total")
-#check for NAN
-sum(is.na(tourism_data_no_total))
-#analyse the NAN values, where are they
-(tourism_data_no_total %>% filter(is.na(value)))
-#show data using reactable only showing the first 100 rows
-reactable(head(tourism_data_no_total, 1000), searchable = TRUE)
-
-```
+See appendix for more details and the table. 
 
 ### Tourism Data - Vaud
 
@@ -97,41 +59,48 @@ tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
 #check for NAN
 sum(is.na(tourism_vaud))
 #show the data in a table using reactable
-reactable(head(tourism_vaud, 1000))
+reactable(head(tourism_vaud, 1000), 
+          searchable = TRUE,
+          defaultPageSize = 5,
+          sortable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          bordered = TRUE,
+          highlight = TRUE,
+          striped = TRUE,
+          compact = TRUE,
+          showPageSizeOptions = TRUE,
+          showSortable = TRUE
+          )
 ```
 
 Note that no missing values were found in the dataset.
 
-### Tourism Data - Zurich
-
-We filtered the "Kanton" column to keep only the canton of Zurich.
-
-Here are the first 1000 instances of the raw data :
-
-```{r Tourism Zurich}
-#filter column 'Kanton' for Zurich
-tourism_data_zurich <- tourism_data_no_total %>% filter(Kanton == "Zürich")
-#check for NAN
-sum(is.na(tourism_data_zurich))
-#analyse the NAN values, where are they
-tourism_data_zurich %>% filter(is.na(value))
-
-#show the data in a table using reactable
-reactable(head(tourism_data_zurich, 1000))
-```
-
-There are 1869 missing values for the two sub-datasets. These missing values come from the 'value' column, creating gaps in the time series. We'll see later how we're going to process them to do modelling.
 
 ### Tourism Data - Zurich and Philippines
 
-We are filtering the "Kanton" column and the 'Herkunftsland' column, keeping "Zurich" and "Philippinen" for the country of origin.
+The data Zurich contained the total number of overnight stays in Zurich by tourists from different countries. We are interested in the number of overnight stays by tourists from the Philippines. See appendix for more details.
+
+Thus, we are filtering the "Kanton" column and the 'Herkunftsland' column, keeping "Zurich" and "Philippinen" for the country of origin.
 
 Here is all the instances of the raw filtered data :
 
 ```{r Tourism Zurich and Philippines}
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
 #show table using reactable
-reactable(tourism_data_zurich_philippines)
+reactable(tourism_data_zurich_philippines, 
+          searchable = TRUE,
+          defaultPageSize = 5,
+          sortable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          bordered = TRUE,
+          highlight = TRUE,
+          striped = TRUE,
+          compact = TRUE,
+          showPageSizeOptions = TRUE,
+          showSortable = TRUE
+          )
 ```
 
 Filtering for `Philippinen` solved the problem of missing data we had with all countries of origin. The overnight stays are all included throughout the period.
@@ -917,3 +886,88 @@ reactable(
 )
 ```
 
+# Appendix
+
+## General Overview
+As the dataset provided is in German, we have translated the data in English to make it more intuitive and understandable for everyone. Then, we created a new 'Date' column, year-month-day, which corresponds to the correct format to be able to make predictions.
+
+Here are the first 1000 instances of the raw data :
+
+```{r Tourism ALL}
+# Load the data in folder data named Dataset_tourism.xlsx)
+tourism_data <- readxl::read_xlsx(here("data/Dataset_tourism.xlsx"))
+
+#removing value 'Herkunftsland - Total' in column 'Herkunftsland' as it is just the total
+#tourism_data <- tourism_data %>% filter(Herkunftsland != "Herkunftsland - Total")
+#print unique values in month column
+unique(tourism_data$Monat)
+# change ' [1] "Januar"    "Februar"   "März"      "April"     "Mai"       "Juni"      "Juli"      "August" "September" "Oktober"   "November"  "Dezember" into english month'
+tourism_data$Monat <- tourism_data$Monat %>% recode_factor(
+  "Januar" = "January",
+  "Februar" = "February",
+  "März" = "March",
+  "April" = "April",
+  "Mai" = "May",
+  "Juni" = "June",
+  "Juli" = "July",
+  "August" = "August",
+  "September" = "September",
+  "Oktober" = "October",
+  "November" = "November",
+  "Dezember" = "December"
+)
+#add date type column for plotting purposes
+tourism_data <- tourism_data %>% mutate(Date = dmy(paste("01", Monat, Jahr)))
+# filtering out 'Herkunftsland - Total' in column 'Herkunftsland' as it is just the total
+tourism_data_no_total <- tourism_data %>% filter(Herkunftsland != "Herkunftsland - Total")
+#check for NAN
+sum(is.na(tourism_data_no_total))
+#analyse the NAN values, where are they
+(tourism_data_no_total %>% filter(is.na(value)))
+#show data using reactable only showing the first 100 rows
+reactable(head(tourism_data_no_total, 1000), 
+          searchable = TRUE,
+          defaultPageSize = 5,
+          sortable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          bordered = TRUE,
+          highlight = TRUE,
+          striped = TRUE,
+          compact = TRUE,
+          showPageSizeOptions = TRUE,
+          showSortable = TRUE
+          )
+```
+
+## Tourism Data - Zurich
+
+We filtered the "Kanton" column to keep only the canton of Zurich.
+
+Here are the first 1000 instances of the raw data :
+
+```{r Tourism Zurich}
+#filter column 'Kanton' for Zurich
+tourism_data_zurich <- tourism_data_no_total %>% filter(Kanton == "Zürich")
+#check for NAN
+sum(is.na(tourism_data_zurich))
+#analyse the NAN values, where are they
+tourism_data_zurich %>% filter(is.na(value))
+
+#show the data in a table using reactable
+reactable(head(tourism_data_zurich, 1000), 
+          searchable = TRUE,
+          defaultPageSize = 5,
+          sortable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          bordered = TRUE,
+          highlight = TRUE,
+          striped = TRUE,
+          compact = TRUE,
+          showPageSizeOptions = TRUE,
+          showSortable = TRUE
+          )
+```
+
+There are 1869 missing values for the two sub-datasets. These missing values come from the 'value' column, creating gaps in the time series. We'll see later how we're going to process them to do modelling.
