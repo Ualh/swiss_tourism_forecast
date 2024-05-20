@@ -399,11 +399,12 @@ In this section, we will focus on the number of visitors from the Philippines to
 
 As we have seen, Covid has had a significant impact on the number of tourists in Zurich. We will first forecast the number of tourists without taking into account the Covid period. This will allow us to see the impact of the pandemic on the forecasts.
 
-#### Naive Forecast
+#### ETS
 
-The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 15 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich.
+We first run a NAIVE model to have a benchmark for the other model. And a AAA model for the ETS model for ensuring that the model is indeed worse than a multiplicative one, based on our previous observations. *see appendix for the plots and metrics of those 2 models*
 
-```{r}
+```{r warning=FALSE}
+###### NAIVE part #####
 #convert tourism_ts to tsibble
 tourism_ts <- tourism_ts %>% as_tsibble()
 # Fit a naive model
@@ -413,62 +414,43 @@ fit <- tourism_ts %>%
 forecast <- fit %>%
   forecast(h = 15)
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
-plot <- forecast %>%
+plot_naive <- forecast %>%
   autoplot(tourism_ts, alpha = 0.5) +
   labs(title = "Forecast of tourists from Philippines to Zurich",
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
-plot
-```
 
-This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach.
-
-The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
-
-We can see here the metrics of the naive model :
-```{r}
 metrics_naive <- fit %>% accuracy()
 # Display accuracy metrics in an HTML table
 metrics_naive <- metrics_naive %>%
   kable("html", caption = "Naive Model Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
 
-#### ETS
+###### ETS PART AAA #####
 
-```{r warning=FALSE}
 # Fit an ETS model
 # Adjusting the model parameters according to the characteristics of the data
 # Here "A" means additive error, "N" means no trend, and "N" means no seasonality
 # change these if needed
 fit <- tourism_ts %>%
-  model(ETS_M_seaso = ETS(value ~ error("A") + trend("A") + season("A"))) #multiplicative seasonality)
+  model(ETS_M_seaso = ETS(value ~ error("A") + trend("A") + season("A")))
 # Forecast the next 2 years periods
 forecast <- fit %>%
   forecast(h = 15)
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
-plot <- forecast %>%
+plot_ets_AAA <- forecast %>%
   autoplot(tourism_ts, alpha = 0.5) +
   labs(title = "Forecast of tourists from Philippines to Zurich",
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
-plot
-```
 
-Clearly see here that the confidence interval is too big, almost like a naive forecast, therefore as suspected we will move to a *multiplicative* seasonality model.
-
-We see here the metrics of the ETS AAA model :
-```{r}
 # Calculate the accuracy of the training set
-metrics_ets_AAA <- fit %>% accuracy()
-
-# Display accuracy metrics in an HTML table
-metrics_ets_AAA %>%
+metrics_ets_AAA <- fit %>% accuracy() %>%
   kable("html", caption = "ETS AAA Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-Why trend dp and seaso M ? - Trend is present so A - Seasonality is present and growing over time so Multiplicative was chosen
+Now we will forecast the number of tourists from the Philippines to Zurich using the ETS AAM AND AAdM models.
 
 ```{r}
 # comparing several model
@@ -659,51 +641,25 @@ We see that Philippines had a higher stringency index than Switzerland.
 You can observe here the resulted data from the merge of the stringency index and the tourism data :
 ```{r}
 #show merge data using reactable
-reactable(merged_data)
+reactable(merged_data, 
+          searchable = TRUE,
+          defaultPageSize = 5,
+          sortable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          bordered = TRUE,
+          highlight = TRUE,
+          striped = TRUE,
+          compact = TRUE,
+          showPageSizeOptions = TRUE,
+          showSortable = TRUE
+          )
 ```
 
-#### Finding a Model
 
-Choose a forecasting model that can incorporate exogenous variables (covariates).
+#### ARIMAX 
 
-#####  Multiple Regression Analysis
-
-Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
-
-Here is a summary of the effect of the variables on the number of tourists from the Philippines to Zurich :
-```{r}
-# Fit a multiple regression model
-model <- lm(value ~ avg_stringency_index_PH + avg_stringency_index_SW, data = merged_data)
-
-# Summary of the model
-summary(model)
-
-# Forecast the next 24 months
-forecast_values <- predict(model, newdata = merged_data)
-
-#us gtsummary to show the summary of the model
-model %>%
-  gtsummary::tbl_regression()
-```
-
-We observe that the p-value are lower for Switzerland than for Philippines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for Switzerland and 5.9 for Philippines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
-
-We can observe here the metrics:
-```{r}
-#create a table with the metrics of the model and show it as an html
-model_metrics <- model %>%
-  broom::glance()
-
-# show html table with metrics
-model_metrics %>%
-  kable("html", caption = "Model Metrics") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
-
-BLABLABLA explain metrics
-The way higher AIC shows that this model is not the best.
-
-##### ARIMAX 
+We choose the ARIMAX as multiple regression model did not provide satisfying results. *see appendix*
 
 We try here to integrate the stringency index as an exogenous variable in the ARIMA model. This will allow us to account for the impact of COVID-19 on the number of tourists from the Philippines to Zurich.
 
@@ -786,7 +742,7 @@ metrics_arimax
 metrics_arima_table
 ```
 
-Summary
+Summary a reformuler
 Best in MAE and MAPE: ARIMAX
 Best in RMSE: ARIMA_auto_stepwise
 Best in AIC: ARIMA_auto_stepwise
@@ -908,7 +864,7 @@ reactable(head(tourism_data_no_total, 1000),
           )
 ```
 
-## Tourism Data - Zurich
+## ZH - Tourism Data
 
 We filtered the "Kanton" column to keep only the canton of Zurich.
 
@@ -933,7 +889,7 @@ reactable(head(tourism_data_zurich, 1000),
 
 There are 1869 missing values for the two sub-datasets. These missing values come from the 'value' column, creating gaps in the time series. We'll see later how we're going to process them to do modelling.
 
-## Zurich and All visiting countries
+## ZH -Zurich and All visiting countries
 
 The graph shows the monthly number of overnight stays in Zurich from tourists of different countries.
 
@@ -971,7 +927,7 @@ interactive_plot <- interactive_plot %>%
 interactive_plot
 ```
 
-## Additive STL
+## ZH -Additive STL
 The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
 
 ```{r Decomposition-zh}
@@ -997,7 +953,7 @@ stl(tourism_ts, s.window = "periodic") %>%
   theme_minimal()
 ```
 
-## Seasonality ZH
+## ZH - Seasonality 
 
 Seasonal sub-series plot permit to better visualize the monthly fluctuations of each year, from 2005 to 2023.
 
@@ -1009,3 +965,70 @@ ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE) +
 ```
 
 We clearly observe here that the seasonality is not constant over time.
+
+## ZH - Naive Forecast
+
+The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 15 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich.
+
+```{r}
+plot_naive
+```
+
+This naive model predicts that future values will be equal to the last observed value in the time series. It does not take into account the past events like the pandemic and assumes here that the levels observed after this extreme fall will remain unchanged. The model does not take into account trends or seasonality neither, which are very present in our case. It's a simplified approach.
+
+The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
+
+We can see here the metrics of the naive model :
+```{r}
+metrics_naive
+```
+
+## ZH - ETS AAA model
+
+```{r}
+plot_ets_AAA
+```
+Clearly see here that the confidence interval is too big, almost like a naive forecast, therefore as suspected we will move to a *multiplicative* seasonality model.
+
+We see here the metrics of the ETS AAA model :
+
+```{r}
+metrics_ets_AAA
+```
+
+## ZH -  Multiple Regression Analysis
+
+Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
+
+Here is a summary of the effect of the variables on the number of tourists from the Philippines to Zurich :
+```{r}
+# Fit a multiple regression model
+model <- lm(value ~ avg_stringency_index_PH + avg_stringency_index_SW, data = merged_data)
+
+# Summary of the model
+summary(model)
+
+# Forecast the next 24 months
+forecast_values <- predict(model, newdata = merged_data)
+
+#us gtsummary to show the summary of the model
+model %>%
+  gtsummary::tbl_regression()
+```
+
+We observe that the p-value are lower for Switzerland than for Philippines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for Switzerland and 5.9 for Philippines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
+
+We can observe here the metrics:
+```{r}
+#create a table with the metrics of the model and show it as an html
+model_metrics <- model %>%
+  broom::glance()
+
+# show html table with metrics
+model_metrics %>%
+  kable("html", caption = "Model Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+BLABLABLA explain metrics
+The way higher AIC shows that this model is not the best.
