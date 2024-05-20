@@ -323,11 +323,11 @@ There is an upward trend until around 2020, when it falls sharply because of the
 
 # Modelling
 
-This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model. Treat also carefully seasonality, outliers, collinearity, covariates, special events, etc. Remember the following steps:
+In this section, we will apply forecasting techniques to model tourism data for Zurich, aiming to predict future trends. This involves carefully choosing aggregation levels for hierarchical time series to accurately capture data structure.
 
-(a) Aggregation choice for hierarchical time series
-(b) Model building
-(c) Model selection
+We build and justify various time series models, considering seasonality, outliers, collinearity, covariates, and special events. Each model is evaluated for its suitability and performance in handling the data’s complexities.
+
+Finally, we select the best model based on a detailed assessment of forecasting accuracy, aiming to turn historical data into actionable insights for strategic decision-making in Zurich’s tourism sector.
 
 ## Total number of visitors in Vaud
 
