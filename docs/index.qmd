@@ -549,11 +549,12 @@ We observe that the damped model is better on almost all metrics.
 
 #### ARIMA
 
-We fit 3 different models
+We apply three ARIMA models and determine which one gives us the best accury in term of prediction : 
 
-- one with auto-arima
-- Anoter one with auto-arima but with seasonality added
-- And one with auto-arima but with stepwise and approximation options turned off for a more thorough search.
+- An ARIMA_auto, which will automatically determine the optimal values of the ARIMA parameters (p, d, q) using AIC criteria.
+- An ARIMA_auto_seasonal, which works like the ARIMA_auto but takes into account the monthly seasonality of our data. 
+- ARIMA_auto_stepwise, which performs an exhaustive search over all possible combinations of parameters by disabling the stepwise and approximation options. It increases the accuracy of the model and do not take seasonal components into account. 
+
 
 NOTE A REFORMULER PLUS PETIT
 Reasons to Turn Off Stepwise and Approximation
@@ -581,7 +582,7 @@ plot_arima <- forecast_arima %>%
 plot_arima
 ```
 
-We see that that the Auto-ARIMA with seasonality is more negative than the two others and that the stepwise and approximation options turned off is more positive. The auto-arima alone is in between both.
+From the graph we can see that the ARIMA_auto_seasonal model gives more negative predictions over the next 15 months than the other two models. The ARIMA_auto_stepwise model predicts the highest values while the ARIMA_auto model lies between the two prediction curves.
 
 Here are the metrics of the ARIMA model :
 ```{r}
@@ -605,31 +606,25 @@ metrics_arima_table <- metrics_arima %>%
 metrics_arima_table
 ```
 
-We observe with the metrics that the more complex model is the best by almost metrics but followed very closely by the auto-arima with seasonality model. The lowest AIC for the more complex model is a good sign that it is the best model.
+According to the table of metrics, the ARIMA_auto_stepwise model appears to be the best choice with the lowest RMSE, MAE and AIC values. This indicates greater accuracy and better model fit despite the computation time involved with this type of model. If computing resources permit, this time cost is recouped by greater accuracy and therefore better fit.
+ARIMA_auto_seasonal is very close to the stepwise model in terms of metrics but shows good model accuracy.
+
 
 ### Forecasting Amidst the Covid-19 Pandemic
 
-Now after those forecast we will take into account the Covid period and see if it will provide a better forecast.
+Now we are going to take into account the Covid period and see how this new information will impact our prediction models. The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. 
+The COVID-19 pandemic has had a devastating impact on the global tourism industry. From the start of 2020, governments around the world put in place strict restrictions to contain the spread of the virus, including border closures, mandatory quarantines and suspensions of international flights. These measures have led to a dramatic fall in international tourist arrivals, seriously disrupting economies dependent on tourism.  
+The Philippines had to follow strict policies during the pandemic as well. 
 
-#### How Philippines dealt with it
+The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? 
+Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19.  For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. 
+Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. 
+Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
-In 2021, the Philippines faced the challenges of the COVID-19 pandemic with a mix of resilience and adaptation.
-
-CHANGE THIS TEXT ITS BULLSHIT \*\*\*\*\* - Lockdowns and Waves: The country experienced two waves of COVID-19, leading to prolonged lockdowns throughout the year. These restrictions aimed to curb the spread of the virus. - Vaccination Campaign: Despite challenges, millions of Filipinos received COVID-19 vaccines. However, experts raised concerns about the campaign's sluggish pace. - Senate Investigations: Lawmakers probed alleged anomalies in pandemic contracts, leading to marathon Senate hearings. - Easing Restrictions: Towards the end of the year, daily cases dropped, and mandatory face shield policies were lifted. This signaled progress in overcoming the crisis. - Risk-Based Decisions: While the holidays looked promising, the threat of new variants remained. Experts advised practicing "risk-based" decisions for activities despite low case numbers1. - Filipinos have become more mindful of hygiene practices, including social distancing, mask-wearing, and proper handwashing. The pandemic also prompted a shift in consumption patterns, with increased focus on essentials and at-home entertainment. However, air travel remains limited due to ongoing concerns.
-
-As for travel, the Philippines continues to navigate the balance between safety and economic recovery. While some travel restrictions have eased, travellers must stay informed about evolving guidelines and exercise caution when planning trips. The threat of new variants underscores the need for vigilance and informed decision-making1 \*\*\*\*\*\*
-
-Question : How to deal with this blackswan event ?
-
-#### Covariates
-
-TEXT A PAUFINER Covariate Adjustment Adjust your forecasts to account for the impact of COVID-19 by including covariates that capture the effects of the pandemic. These covariates can be used to adjust the forecasts based on the observed changes in the data due to COVID-19. For example, you can include a covariate that captures the effect of lockdowns or travel restrictions on tourism data. Scenario Analysis Conduct scenario analysis to explore the potential impact of different COVID-19 scenarios on your forecasts. By considering a range of possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity Analysis Evaluate the sensitivity of your forecasts to changes in key assumptions or parameters. By conducting sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
 #### Data Integration
 
-The Oxford COVID-19 Government Response Tracker (OxCGRT) provides valuable data on government responses to the COVID-19 pandemic, including a Stringency Index that quantifies the severity of lockdown measures. Let me provide more details about this index:
-
-*Stringency Index:* The Stringency Index is a composite measure that evaluates the strictness of government policies related to COVID-19. It calculates a score based on nine key response metrics: - School closures - Workplace closures - Cancellation of public events - Restrictions on public gatherings - Closures of public transport - Stay-at-home requirements - Public information campaigns - Restrictions on internal movements - International travel controls Each metric is assigned a value between 0 and 100, with a higher score indicating a stricter response. The overall Stringency Index is the mean score of these nine metrics. If policies vary at the subnational level, the index reflects the strictest sub-region's response level. Importantly, the Stringency Index records the strictness of government policies but does not measure or imply the appropriateness or effectiveness of a country's response. A higher score does not necessarily mean that a country's response is better than others lower on the index.
+The OxCGRT provides data on government responses to COVID-19, including a Stringency Index that measures the severity of lockdown measures. The Stringency Index is calculated based on nine key metrics: School closures, Workplace closures, Cancellation of public events, Restrictions on public gatherings, Closures of public transport, Stay-at-home requirements, International travel controls, etc… Each metric is scored from 0 to 100, with higher scores indicating stricter responses. The overall Stringency Index is the average score of these metrics, reflecting the strictest sub-regional policies if they vary. 
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
@@ -681,7 +676,10 @@ ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippi
   scale_color_manual(values = c("#3C5B6F", "darkred"),
                      labels = c("Philippines", "Switzerland"))
 ```
-We see that Philippines had a higher stringency index than Switzerland. 
+
+We see that Philippines had a higher stringency index than Switzerland all over the period. 
+
+You can observe here the resulted data from the merge of the stringency index and the tourism data from the 2020s.
 
 You can observe here the resulted data from the merge of the stringency index and the tourism data :
 ```{r}
@@ -704,11 +702,10 @@ reactable(merged_data,
 
 #### ARIMAX 
 
-We choose the ARIMAX as multiple regression model did not provide satisfying results. *see appendix*
+In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. 
+Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
+We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
 
-We try here to integrate the stringency index as an exogenous variable in the ARIMA model. This will allow us to account for the impact of COVID-19 on the number of tourists from the Philippines to Zurich.
-
-We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
 
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -768,6 +765,7 @@ if (length(tourism_ts) == nrow(exog_data)) {
 ```
 
 Here are the metrics of the ARIMAX model with the metrics of the ARIMA model for comparison :
+
 ```{r}
 #show metric in html
 model_metrics <- data.frame(
@@ -787,18 +785,15 @@ metrics_arimax
 metrics_arima_table
 ```
 
-Summary a reformuler
-Best in MAE and MAPE: ARIMAX
-Best in RMSE: ARIMA_auto_stepwise
-Best in AIC: ARIMA_auto_stepwise
 Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, while ARIMAX excels in MAE and MAPE. Depending on which metric is prioritized, either ARIMAX or ARIMA_auto_stepwise would be the preferred model.
 
 #### Other ideas
 
-A Ddeveloper, pq on a pas choisi, bblabla, ...
-- Dummy variable for the covid period. We could have a dummy variable that takes the value 1 during the covid period and 0 otherwise. This would allow the model to adjust the forecasts to reflect the changes in the data due to COVID-19.
--   Replacing covid values with the ARIMA, If the missing values are random or if excluding them would result in a loss of valuable information, we might consider imputing them. One common approach is to use statistical models like ARIMA to interpolate missing values based on the patterns observed in the available data.
--   Delete the timestamp of the covid period and use fill_gaps() to fill the missing values and then use the a model to predict the missing values.
+Other ideas for taking into account the impact of Covid-19 in our prediction models would be:
+- Create a dummy variable that takes the value 1 during periods of confinement and severe restrictions, and 0 otherwise. This models the direct impact of the pandemic on tourist numbers. If there are missing values, the ARIMA method can be used to interpolate the missing values on the basis of the patterns observed in the available data with the use fill_gaps().
+- Implement additional exogenous variables in our ARIMAX model, such as the number of Covid-19 deaths and/or the vaccination rate.
+- Jump regression models and GARCH models are powerful tools for analysing time series when there are sudden changes or periods of high volatility such as during the Covid-19 pandemic.
+- Apply machine learning techniques to capture non-linear and complex patterns  such as random forest or gradient boosting or recurrent neural networks RNN.
 
 
 # Model Selection
@@ -806,8 +801,8 @@ A Ddeveloper, pq on a pas choisi, bblabla, ...
 Implement model selection metrics comparison,blabla and logic behind it
 
 ## Zurich and Philippines
-To reformulate !!
-Use Information Criteria for Model Comparison: Evaluate models based on criteria such as RMSE, MAE, MAPE, AIC (Akaike Information Criterion) or BIC (Bayesian Information Criterion), which help in selecting a model that balances goodness of fit with complexity.
+
+The performance measures of each of the models we have predicted help us to select the model that best fits our data, i.e. the model that best fits between goodness of fit and complexity.
 
 ```{r}
 metrics_naive
@@ -816,19 +811,11 @@ metrics_arima_table
 metrics_arimax
 ```
 
-Based on the comparison of the metrics:
-
-- ETS_M_seaso_Ad stands out with the lowest MAE (48.9) and RMSE (74.7), making it the most accurate model in terms of absolute and square error metrics. However, its MAPE (105) is not as low as the ARIMAX model's MAPE (74.9).
-- ARIMAX has a competitive AIC (2744) and a lower MAPE (74.9) compared to the ETS models, but a higher MAE (65) and RMSE (105) than ETS_M_seaso_Ad.
-
-Given that the primary goal is to predict the number of visitors accurately:
-
-- ETS_M_seaso_Ad is recommended because it has the lowest MAE and RMSE, indicating more precise predictions, which are crucial for ensuring accurate and actionable insights for decision-making in Zurich's tourism sector.
-- Although the ARIMAX model has a competitive AIC and a reasonable MAPE, its MAE and RMSE are not as competitive as the ETS_M_seaso_Ad model.
-
-Using both forecast hand in hand could be a better approach to have a more robust forecast than selecting only one model.
+The main objective of this project is to accurately predict the number of visitors, which is why we will first analyse the best MAE and RMSE values. The model with the lowest values is ETS_M_seaso_Ad. It is therefore recommended because it shows more accurate predictions, which are crucial for ensuring accurate and usable information for decision-making in the Zurich tourism sector. However, ARIMAX has a better AIC and MAPE. 
+Using both forecasts hand in hand could be a better approach to have a more robust forecast than selecting only one model. This 'forecasting ensemble' would provide increased robustness, reduced bias and improved overall performance.
 
 Here are the forecasted values for the two models :
+
 ```{r}
 # Assuming forecast_arimax and forecast_ETS_M_seaso_Ad are already available
 
@@ -884,6 +871,9 @@ reactable(
   resizable = TRUE
 )
 ```
+
+We can see that there is a significant difference between the two models. The differences (delta) are sometimes very high, for example -351, indicating that the two models capture different seasonal components or trends. Combining the two and taking their average would provide robust and balanced predictions.
+
 
 # Appendix
 
