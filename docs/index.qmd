@@ -41,7 +41,7 @@ The main objectives of this project is to predict :
 
 ## Cleaning & Wrangling
 
-Here we load the data and clean it. We will focus on the data for Vaud and Zurich, as well as the data for the Philippines. 
+Here we load the data and clean it. We will focus on the data for Vaud and Zurich, as well as the data for the Philippines.
 
 ```{r load}
 # Load the data in folder data named Dataset_tourism.xlsx)
@@ -235,7 +235,7 @@ vaud_ts <- tourism_vaud_total %>%
 
 The main insights from this decomposition reflect what we have already observed.
 
--    A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
+-   A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
 
 -   Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
 
@@ -358,7 +358,6 @@ ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtit
 ```
 
 The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to several factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
-
 
 #### Trend
 
@@ -521,6 +520,7 @@ plot
 ```
 
 We can see here the metrics of the two ETS models (AAM and AAdM) :
+
 ```{r}
 # Extract AIC values
 aic_values <- fit %>%
@@ -547,18 +547,14 @@ We observe that the damped model is better on almost all metrics.
 
 #### ARIMA
 
-We apply three ARIMA models and determine which one gives us the best accury in term of prediction : 
+We apply three ARIMA models and determine which one gives us the best accury in term of prediction :
 
-- An ARIMA_auto, which will automatically determine the optimal values of the ARIMA parameters (p, d, q) using AIC criteria.
-- An ARIMA_auto_seasonal, which works like the ARIMA_auto but takes into account the monthly seasonality of our data. 
-- ARIMA_auto_stepwise, which performs an exhaustive search over all possible combinations of parameters by disabling the stepwise and approximation options. It increases the accuracy of the model and do not take seasonal components into account. 
+-   An ARIMA_auto, which will automatically determine the optimal values of the ARIMA parameters (p, d, q) using AIC criteria.
+-   An ARIMA_auto_seasonal, which works like the ARIMA_auto but takes into account the monthly seasonality of our data.
+-   ARIMA_auto_stepwise, which performs an exhaustive search over all possible combinations of parameters by disabling the stepwise and approximation options. It increases the accuracy of the model and do not take seasonal components into account.
 
+NOTE A REFORMULER PLUS PETIT Reasons to Turn Off Stepwise and Approximation Accuracy Over Speed: If computational resources and time are not a constraint, turning off these options can lead to more accurate and reliable model selection and parameter estimation. Better Model Selection: An exhaustive search (with stepwise = FALSE) and exact estimation (with approximation = FALSE) increase the chances of identifying the true underlying model, which can improve forecast accuracy. Complex Data: For datasets with complex patterns or when high accuracy is critical, the benefits of thorough model exploration and exact estimation outweigh the increased computational cost.
 
-NOTE A REFORMULER PLUS PETIT
-Reasons to Turn Off Stepwise and Approximation
-Accuracy Over Speed: If computational resources and time are not a constraint, turning off these options can lead to more accurate and reliable model selection and parameter estimation.
-Better Model Selection: An exhaustive search (with stepwise = FALSE) and exact estimation (with approximation = FALSE) increase the chances of identifying the true underlying model, which can improve forecast accuracy.
-Complex Data: For datasets with complex patterns or when high accuracy is critical, the benefits of thorough model exploration and exact estimation outweigh the increased computational cost.
 ```{r}
 # Fit an automatic ARIMA model
 fit_arima <- tourism_ts %>%
@@ -583,6 +579,7 @@ plot_arima
 From the graph we can see that the ARIMA_auto_seasonal model gives more negative predictions over the next 15 months than the other two models. The ARIMA_auto_stepwise model predicts the highest values while the ARIMA_auto model lies between the two prediction curves.
 
 Here are the metrics of the ARIMA model :
+
 ```{r}
 # Extract AIC values
 aic_values <- fit_arima %>%
@@ -604,29 +601,23 @@ metrics_arima_table <- metrics_arima %>%
 metrics_arima_table
 ```
 
-According to the table of metrics, the ARIMA_auto_stepwise model appears to be the best choice with the lowest RMSE, MAE and AIC values. This indicates greater accuracy and better model fit despite the computation time involved with this type of model. If computing resources permit, this time cost is recouped by greater accuracy and therefore better fit.
-ARIMA_auto_seasonal is very close to the stepwise model in terms of metrics but shows good model accuracy.
-
+According to the table of metrics, the ARIMA_auto_stepwise model appears to be the best choice with the lowest RMSE, MAE and AIC values. This indicates greater accuracy and better model fit despite the computation time involved with this type of model. If computing resources permit, this time cost is recouped by greater accuracy and therefore better fit. ARIMA_auto_seasonal is very close to the stepwise model in terms of metrics but shows good model accuracy.
 
 ### Forecasting Amidst the Covid-19 Pandemic
 
-Now we are going to take into account the Covid period and see how this new information will impact our prediction models. The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. 
-The COVID-19 pandemic has had a devastating impact on the global tourism industry. From the start of 2020, governments around the world put in place strict restrictions to contain the spread of the virus, including border closures, mandatory quarantines and suspensions of international flights. These measures have led to a dramatic fall in international tourist arrivals, seriously disrupting economies dependent on tourism.  
-The Philippines had to follow strict policies during the pandemic as well. 
+Now we are going to take into account the Covid period and see how this new information will impact our prediction models. The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The COVID-19 pandemic has had a devastating impact on the global tourism industry. From the start of 2020, governments around the world put in place strict restrictions to contain the spread of the virus, including border closures, mandatory quarantines and suspensions of international flights. These measures have led to a dramatic fall in international tourist arrivals, seriously disrupting economies dependent on tourism.\
+The Philippines had to follow strict policies during the pandemic as well.
 
-The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? 
-Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19.  For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. 
-Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. 
-Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
-
+The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19. For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
 #### Data Integration
 
-The OxCGRT provides data on government responses to COVID-19, including a Stringency Index that measures the severity of lockdown measures. The Stringency Index is calculated based on nine key metrics: School closures, Workplace closures, Cancellation of public events, Restrictions on public gatherings, Closures of public transport, Stay-at-home requirements, International travel controls, etc… Each metric is scored from 0 to 100, with higher scores indicating stricter responses. The overall Stringency Index is the average score of these metrics, reflecting the strictest sub-regional policies if they vary. 
+The OxCGRT provides data on government responses to COVID-19, including a Stringency Index that measures the severity of lockdown measures. The Stringency Index is calculated based on nine key metrics: School closures, Workplace closures, Cancellation of public events, Restrictions on public gatherings, Closures of public transport, Stay-at-home requirements, International travel controls, etc… Each metric is scored from 0 to 100, with higher scores indicating stricter responses. The overall Stringency Index is the average score of these metrics, reflecting the strictest sub-regional policies if they vary.
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
 Here you can observe the stringency index for the Philippines and Switzerland :
+
 ```{r}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines
@@ -675,11 +666,12 @@ ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippi
                      labels = c("Philippines", "Switzerland"))
 ```
 
-We see that Philippines had a higher stringency index than Switzerland all over the period. 
+We see that Philippines had a higher stringency index than Switzerland all over the period.
 
 You can observe here the resulted data from the merge of the stringency index and the tourism data from the 2020s.
 
 You can observe here the resulted data from the merge of the stringency index and the tourism data :
+
 ```{r}
 #show merge data using reactable
 reactable(merged_data, 
@@ -697,13 +689,9 @@ reactable(merged_data,
           )
 ```
 
+#### ARIMAX
 
-#### ARIMAX 
-
-In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. 
-Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
-We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
-
+In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
 
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -787,30 +775,21 @@ Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, wh
 
 #### Other ideas
 
-Other ideas for taking into account the impact of Covid-19 in our prediction models would be:
-- Create a dummy variable that takes the value 1 during periods of confinement and severe restrictions, and 0 otherwise. This models the direct impact of the pandemic on tourist numbers. If there are missing values, the ARIMA method can be used to interpolate the missing values on the basis of the patterns observed in the available data with the use fill_gaps().
-- Implement additional exogenous variables in our ARIMAX model, such as the number of Covid-19 deaths and/or the vaccination rate.
-- Jump regression models and GARCH models are powerful tools for analysing time series when there are sudden changes or periods of high volatility such as during the Covid-19 pandemic.
-- Apply machine learning techniques to capture non-linear and complex patterns  such as random forest or gradient boosting or recurrent neural networks RNN.
-
+Other ideas for taking into account the impact of Covid-19 in our prediction models would be: - Create a dummy variable that takes the value 1 during periods of confinement and severe restrictions, and 0 otherwise. This models the direct impact of the pandemic on tourist numbers. If there are missing values, the ARIMA method can be used to interpolate the missing values on the basis of the patterns observed in the available data with the use fill_gaps(). - Implement additional exogenous variables in our ARIMAX model, such as the number of Covid-19 deaths and/or the vaccination rate. - Jump regression models and GARCH models are powerful tools for analysing time series when there are sudden changes or periods of high volatility such as during the Covid-19 pandemic. - Apply machine learning techniques to capture non-linear and complex patterns such as random forest or gradient boosting or recurrent neural networks RNN.
 
 # Model Selection
+
 ## Vaud
+
 Implement model selection metrics comparison,blabla and logic behind it
 
 ## Zurich and Philippines
 
 The performance measures of each of the models we have predicted help us to select the model that best fits our data, i.e. the model that best fits between goodness of fit and complexity.
 
-```{r}
-metrics_naive
-metrics_ets
-metrics_arima_table
-metrics_arimax
-```
+![Models Metrics](images/zh_metrics.png){fig-align="center"}
 
-The main objective of this project is to accurately predict the number of visitors, which is why we will first analyse the best MAE and RMSE values. The model with the lowest values is ETS_M_seaso_Ad. It is therefore recommended because it shows more accurate predictions, which are crucial for ensuring accurate and usable information for decision-making in the Zurich tourism sector. However, ARIMAX has a better AIC and MAPE. 
-Using both forecasts hand in hand could be a better approach to have a more robust forecast than selecting only one model. This 'forecasting ensemble' would provide increased robustness, reduced bias and improved overall performance.
+The main objective of this project is to accurately predict the number of visitors, which is why we will first analyse the best MAE and RMSE values. The model with the lowest values is ETS_M_seaso_Ad. It is therefore recommended because it shows more accurate predictions, which are crucial for ensuring accurate and usable information for decision-making in the Zurich tourism sector. However, ARIMAX has a better AIC and MAPE. Using both forecasts hand in hand could be a better approach to have a more robust forecast than selecting only one model. This 'forecasting ensemble' would provide increased robustness, reduced bias and improved overall performance.
 
 Here are the forecasted values for the two models :
 
@@ -885,6 +864,7 @@ In conclusion, it should be noted that this analysis has revealed a special impa
 # Appendix
 
 ## General Overview
+
 As the dataset provided is in German, we have translated the data in English to make it more intuitive and understandable for everyone. Then, we created a new 'Date' column, year-month-day, which corresponds to the correct format to be able to make predictions.
 
 Here are the first 1000 instances of the raw data :
@@ -941,13 +921,14 @@ interactive_plot_zh_all
 ```
 
 ## ZH -Additive STL
+
 The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
 
 ```{r}
 stl_zh
 ```
 
-## ZH - Seasonality 
+## ZH - Seasonality
 
 Seasonal sub-series plot permit to better visualize the monthly fluctuations of each year, from 2005 to 2023.
 
@@ -973,6 +954,7 @@ This naive model predicts that future values will be equal to the last observed 
 The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals of the forecasts. The wider the interval, the greater the uncertainty about the long-term forecasts which is the case here.
 
 We can see here the metrics of the naive model :
+
 ```{r}
 metrics_naive
 ```
@@ -982,6 +964,7 @@ metrics_naive
 ```{r}
 plot_ets_AAA
 ```
+
 Clearly see here that the confidence interval is too big, almost like a naive forecast, therefore as suspected we will move to a *multiplicative* seasonality model.
 
 We see here the metrics of the ETS AAA model :
@@ -990,11 +973,12 @@ We see here the metrics of the ETS AAA model :
 metrics_ets_AAA
 ```
 
-## ZH -  Multiple Regression Analysis
+## ZH - Multiple Regression Analysis
 
 Simple yet effective, if the relationships between the covariates and the dependent variable (tourist numbers) are linear.
 
 Here is a summary of the effect of the variables on the number of tourists from the Philippines to Zurich :
+
 ```{r}
 # Fit a multiple regression model
 model <- lm(value ~ avg_stringency_index_PH + avg_stringency_index_SW, data = merged_data)
@@ -1010,9 +994,10 @@ model %>%
   gtsummary::tbl_regression()
 ```
 
-We observe that the p-value are lower for Switzerland than for Philippines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for Switzerland and 5.9 for Philippines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. 
+We observe that the p-value are lower for Switzerland than for Philippines. This means that government stringency index in Switzerland has a more significant impact on the number of tourists than in the Philippines. Indeed, the beta of -12 for Switzerland and 5.9 for Philippines shows that the number of tourists in Switzerland decreases by 12 for each unit of stringency index, which seems logical. However the number of tourists in the Philippines increases by 5.9 for each unit of stringency index, which is counter-intuitive. This could be due to the fact that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich.
 
 We can observe here the metrics:
+
 ```{r}
 #create a table with the metrics of the model and show it as an html
 model_metrics <- model %>%
