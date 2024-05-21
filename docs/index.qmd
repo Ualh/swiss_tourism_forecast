@@ -872,6 +872,15 @@ reactable(
 
 We can see that there is a significant difference between the two models. The differences (delta) are sometimes very high, for example -351, indicating that the two models capture different seasonal components or trends. Combining the two and taking their average would provide robust and balanced predictions.
 
+# Conclusion
+
+The project analyzed tourism data to predict the number of overnight stays of tourists in Vaud and from the Philippines to Zurich in the period from October 2023 to December 2024. The study focused on the cantons of Vaud and Zurich, adapting the analysis to specific regional and international tourism dynamics.
+
+A preliminary analysis of the data revealed key patterns and trends, such as the significant impact of seasonal fluctuations and the COVID-19 pandemic on tourist behavior. In Vaud, the presence of a recurring seasonal pattern and a changing trend has highlighted the need for models that can adapt to such fluctuations. The analysis conducted in Zurich revealed specific periods of high tourist activity that correspond to the holiday calendar in the Philippines, which provided valuable information for the development of targeted tourism strategies.
+
+The use of forecasting models such as ETS and ARIMA has demonstrated their effectiveness in identifying these complex patterns, providing reliable forecasts of future tourist flows. The models were selected based on their ability to account for seasonality, trends and significant impacts of global events such as the pandemic, which were important for accurate forecasting.
+
+In conclusion, it should be noted that this analysis has revealed a special impact of global events on tourism. This data is important for strategic planning and decision-making in the tourism cantons of Vaud and Zurich. In the future, we recommend continued monitoring and adaptive forecasting to take into account unforeseen global impacts, ensuring sustainable growth of the tourism industry in these regions.
 
 # Appendix
 
@@ -1015,15 +1024,4 @@ model_metrics %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-BLABLABLA explain metrics
 The way higher AIC shows that this model is not the best.
-
-# Conclusion
-
-The project analyzed tourism data to predict the number of overnight stays of tourists in Vaud and from the Philippines to Zurich in the period from October 2023 to December 2024. The study focused on the cantons of Vaud and Zurich, adapting the analysis to specific regional and international tourism dynamics.
-
-A preliminary analysis of the data revealed key patterns and trends, such as the significant impact of seasonal fluctuations and the COVID-19 pandemic on tourist behavior. In Vaud, the presence of a recurring seasonal pattern and a changing trend has highlighted the need for models that can adapt to such fluctuations. The analysis conducted in Zurich revealed specific periods of high tourist activity that correspond to the holiday calendar in the Philippines, which provided valuable information for the development of targeted tourism strategies.
-
-The use of forecasting models such as ETS and ARIMA has demonstrated their effectiveness in identifying these complex patterns, providing reliable forecasts of future tourist flows. The models were selected based on their ability to account for seasonality, trends and significant impacts of global events such as the pandemic, which were important for accurate forecasting.
-
-In conclusion, it should be noted that this analysis has revealed a special impact of global events on tourism. This data is important for strategic planning and decision-making in the tourism cantons of Vaud and Zurich. In the future, we recommend continued monitoring and adaptive forecasting to take into account unforeseen global impacts, ensuring sustainable growth of the tourism industry in these regions.
