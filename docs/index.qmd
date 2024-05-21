@@ -145,7 +145,7 @@ plot_vaud_total <- tourism_vaud_total %>%
   theme_minimal()
 
 # Convert to an interactive plotly object with specified width and height
-interactive_plot_total <- ggplotly(plot_vaud_total, width = 600, height = 400)
+interactive_plot_total <- ggplotly(plot_vaud_total, width = 600, height = 300)
 
 # Adjust plotly settings
 interactive_plot_total %>%
@@ -160,6 +160,7 @@ The plot shows key trends in tourist visits to the canton of Vaud. There are not
 ### Decomposition
 
 We have process an additive decomposition of the time series into three components: *trend, seasonality and residual*. These components will allow us to understand how they contribute to the variations observed in Swiss tourism data.
+*see the appendix for more details on the decomposition*
 
 ```{r vaud decomposition}
 # Convert data to a time series object
@@ -174,7 +175,7 @@ vaud_ts <- tourism_vaud_total %>%
   with(ts(value, frequency = 12, start = decimal_date(min(Date, na.rm = TRUE))))
 
 # Perform STL decomposition
- stl(vaud_ts, s.window = "periodic") %>% 
+stl_vd <- stl(vaud_ts, s.window = "periodic") %>% 
    autoplot() +
   labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists in canton Vaud") +
   theme_minimal()
@@ -231,7 +232,7 @@ p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
   theme_minimal()
 
 # Convert to an interactive plotly object with specified width and height
-interactive_plot <- ggplotly(p, width = 700, height = 300)
+interactive_plot <- ggplotly(p, width = 600, height = 300)
 
 # Adjust plotly settings
 interactive_plot <- interactive_plot %>%
@@ -281,15 +282,7 @@ stl_zh <- stl(tourism_ts, s.window = "periodic") %>%
   autoplot() +
   labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists from Philippines to Zurich") +
   theme_minimal()
-```
-We noted :
--   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
--   Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
--   A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
 
-#### Seasonality
-
-```{r seaso zh}
 # several chart per month to see the seasonality
 seaso_plot_zh_2 <- ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 
@@ -298,19 +291,15 @@ seaso_plot_zh_2 <- ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xl
 #tourism_ts %>% gg_subseries(value) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 ```
 
-The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to several factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
+We noted :
 
-#### Trend
-
-There is an upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
+-   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
+-   Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
+-   A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
 
 # Modelling
 
-In this section, we will apply forecasting techniques to model tourism data for Zurich, aiming to predict future trends. This involves carefully choosing aggregation levels for hierarchical time series to accurately capture data structure.
-
-We build and justify various time series models, considering seasonality, outliers, collinearity, covariates, and special events. Each model is evaluated for its suitability and performance in handling the data’s complexities.
-
-Finally, we select the best model based on a detailed assessment of forecasting accuracy, aiming to turn historical data into actionable insights for strategic decision-making in Zurich’s tourism sector.
+In this section, we will apply forecasting techniques to model tourism data for Zurich, aiming to predict future trends. 
 
 ## Total number of visitors in Vaud
 
@@ -533,12 +522,7 @@ forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
 # Select the relevant columns
 forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
   select(Date, ETS_M_seaso_Ad_Forecast, ETS_Lo_95, ETS_Hi_95)
-```
 
-Now we will forecast the number of tourists from the Philippines to Zurich using the ETS AAM AND AAdM models.
-*see the appendix for a vizualisation of the 2 models*
-
-```{r}
 # comparing several model
 fit <- tourism_ts %>%
   model(
@@ -556,11 +540,7 @@ plot_ets_AAM_AAdM <- forecast %>%
   labs(title = "Forecast of tourists from Philippines to Zurich",
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
-```
 
-We can see here the metrics of the two ETS models (AAM and AAdM) :
-
-```{r}
 # Extract AIC values
 aic_values <- fit %>%
   glance() %>%
@@ -578,9 +558,10 @@ metrics_with_aic <- metrics %>%
 metrics_ets <- metrics_with_aic %>%
   kable("html", caption = "Model Accuracy Metrics with AIC Values") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-
-metrics_ets
 ```
+
+Now we will forecast the number of tourists from the Philippines to Zurich using the ETS AAM AND AAdM models.
+*see the appendix for a vizualisation and metrics of the 2 models*
 
 We observe that the damped model is better on almost all metrics.
 
@@ -631,8 +612,7 @@ metrics_arima_table <- metrics_arima %>%
 
 ### Forecasting Amidst the Covid-19 Pandemic
 
-Now we are going to take into account the Covid period and see how this new information will impact our prediction models. The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The COVID-19 pandemic has had a devastating impact on the global tourism industry. From the start of 2020, governments around the world put in place strict restrictions to contain the spread of the virus, including border closures, mandatory quarantines and suspensions of international flights. These measures have led to a dramatic fall in international tourist arrivals, seriously disrupting economies dependent on tourism.\
-The Philippines had to follow strict policies during the pandemic as well.
+Now we are going to take into account the Covid period and see how this new information will impact our prediction models. Indeed, as we have seen for vaud the pandemic had a significant impact on the number of tourists.
 
 #### Data Integration
 
@@ -710,7 +690,7 @@ stringency_table <- reactable(merged_data,
 #### ARIMAX
 
 In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
-*see the appendix for a vizualisation of the ARIMAX model*
+*see the appendix for a vizualisation and metrics of the ARIMAX model*
 
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -768,8 +748,6 @@ if (length(tourism_ts) == nrow(exog_data)) {
 }
 ```
 
-Here are the metrics of the ARIMAX model with the metrics of the ARIMA model for comparison :
-
 ```{r}
 #show metric in html
 model_metrics <- data.frame(
@@ -785,8 +763,6 @@ model_metrics <- data.frame(
 metrics_arimax <- model_metrics %>%
   kable("html", caption = "Model Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-metrics_arimax
-metrics_arima_table
 ```
 
 Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, while ARIMAX excels in MAE and MAPE. Depending on which metric is prioritized, either ARIMAX or ARIMA_auto_stepwise would be the preferred model.
@@ -859,11 +835,22 @@ forecast_vaud_finaltable <- reactable(
 
 The performance measures of each of the models we have predicted help us to select the model that best fits our data, i.e. the model that best fits between goodness of fit and complexity.
 
-![Models Metrics](images/zh_metrics.png){fig-align="center"}
+```{r}
+data.frame(
+  model = c("NAIVE", "ETS_M_seaso", "ETS_M_seaso_Ad", "ARIMA_auto", "ARIMA_auto_seasonal", "ARIMA_auto_stepwise", "ARIMAX"),
+  RMSE = c(135, 85.7, 74.7, 113, 105, 104, 65),
+  MAE = c(79.2, 55.3, 48.9, 67.7, 70.4, 67.6, 74.9),
+  MAPE = c(48.3, 102, 105, 123, 146, 143, 105),
+  AIC = c("-", 3256, 3195, 2771, 2751, 2738, 2744)
+) %>%
+  kable("html", caption = "Zurich-Philippines Metric Table") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
 
 The main objective of this project is to accurately predict the number of visitors, which is why we will first analyse the best MAE and RMSE values. The model with the lowest values is ETS_M_seaso_Ad. It is therefore recommended because it shows more accurate predictions, which are crucial for ensuring accurate and usable information for decision-making in the Zurich tourism sector. However, ARIMAX has a better AIC and MAPE. Using both forecasts hand in hand could be a better approach to have a more robust forecast than selecting only one model. This 'forecasting ensemble' would provide increased robustness, reduced bias and improved overall performance.
 
-Here are the forecasted values for the two models :
+*Check the Appendix for the forecasted values*
 
 ```{r}
 ##### ARIMAX #####
@@ -893,7 +880,7 @@ final_forecast <- combined_forecast %>%
 
 
 # Display the combined table using reactable
-reactable(
+final_forecast_table_zh <- reactable(
   final_forecast,
   columns = list(
     Date = colDef(name = "Date"),
@@ -992,6 +979,11 @@ interactive_plot %>%
   )
 ```
 
+## Vd - STL
+```{r}
+stl_vd
+```
+
 ## VD - ETS forecast
 
 ```{r ETS Forecast}
@@ -1078,6 +1070,8 @@ seaso_plot_zh_2
 
 We clearly observe here that the seasonality is not constant over time.
 
+The months of May to July and October seem to have visitor peaks, which may indicate a high tourist season during this period. As we saw before, this is due to their calendar. The years 2022 and 2023 show a significant increase in visitor numbers compared with previous years. In particular, the months from May to October 2022 and 2023 show much higher values. This growth may be due to several factors, such as a post-pandemic recovery in travel or specific initiatives that have attracted more tourists.
+
 ## ZH - Naive Forecast
 
 The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 15 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich.
@@ -1114,6 +1108,11 @@ metrics_ets_AAA
 
 ```{r}
 plot_ets_AAM_AAdM
+```
+
+
+```{r}
+metrics_ets
 ```
 
 ## ZH - ARIMA Models
@@ -1197,6 +1196,19 @@ The COVID-19 pandemic is considered a Black Swan event due to its unpredictable 
 plot_forecast_arimax
 ```
 
+Here are the metrics of the ARIMAX model with the metrics of the ARIMA model for comparison :
+```{r}
+metrics_arimax
+metrics_arima_table
+```
+
 ## ZH - Other Ideas
 
 Other ideas for taking into account the impact of Covid-19 in our prediction models would be: - Create a dummy variable that takes the value 1 during periods of confinement and severe restrictions, and 0 otherwise. This models the direct impact of the pandemic on tourist numbers. If there are missing values, the ARIMA method can be used to interpolate the missing values on the basis of the patterns observed in the available data with the use fill_gaps(). - Implement additional exogenous variables in our ARIMAX model, such as the number of Covid-19 deaths and/or the vaccination rate. - Jump regression models and GARCH models are powerful tools for analysing time series when there are sudden changes or periods of high volatility such as during the Covid-19 pandemic. - Apply machine learning techniques to capture non-linear and complex patterns such as random forest or gradient boosting or recurrent neural networks RNN.
+
+## ZH - Final Forecast Table
+
+```{r}
+final_forecast_table_zh
+```
+
