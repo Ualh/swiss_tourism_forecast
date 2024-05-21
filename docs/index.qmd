@@ -162,7 +162,7 @@ plot_vaud <- tourism_vaud %>%
   theme_minimal()
 
 # Convert to an interactive plotly object with specified width and height
-interactive_plot <- ggplotly(plot_vaud, tooltip = "text", width = 600, height = 400)
+interactive_plot <- ggplotly(plot_vaud, tooltip = "text", width = 700, height = 300)
 
 
 # Adjust plotly settings 
@@ -193,7 +193,7 @@ plot_vaud_total <- tourism_vaud_total %>%
   theme_minimal()
 
 # Convert to an interactive plotly object with specified width and height
-interactive_plot_total <- ggplotly(plot_vaud_total, width = 600, height = 400)
+interactive_plot_total <- ggplotly(plot_vaud_total, width = 700, height = 300)
 
 # Adjust plotly settings
 interactive_plot_total <- interactive_plot_total %>%
@@ -286,7 +286,7 @@ p <- ggplot(tourism_data_zurich_philippines, aes(x = Date, y = value)) +
   theme_minimal()
 
 # Convert to an interactive plotly object with specified width and height
-interactive_plot <- ggplotly(p, width = 600, height = 400)
+interactive_plot <- ggplotly(p, width = 700, height = 300)
 
 # Adjust plotly settings
 interactive_plot <- interactive_plot %>%
