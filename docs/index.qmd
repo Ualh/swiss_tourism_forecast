@@ -490,6 +490,38 @@ plot_ets_AAA <- forecast %>%
 metrics_ets_AAA <- fit %>% accuracy() %>%
   kable("html", caption = "ETS AAA Metrics") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+##### ETS ####
+fit <- tourism_ts %>%
+  model(ETS_M_seaso_Ad = ETS(value ~ error("A") + trend("Ad") + season("M")))
+
+# Forecast the next 2 years periods
+forecast <- fit %>%
+  forecast(h = 15, level = 95)
+
+# Extract the forecasts for the ETS_M_seaso_Ad model
+forecast_ETS_M_seaso_Ad <- forecast %>%
+  filter(.model == "ETS_M_seaso_Ad") %>%
+  mutate(
+    # Extract mean forecasts
+    ETS_M_seaso_Ad_Forecast = .mean,
+    # Extract 95% confidence intervals
+    `95%` = hilo(value, level = 95)
+  ) %>%
+  # Unpack the 95% confidence intervals
+  unpack_hilo(`95%`, names_sep = "_")
+
+# Now, rename columns as needed
+forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
+  rename(
+    Date = index,
+    ETS_Lo_95 = `95%_lower`,
+    ETS_Hi_95 = `95%_upper`
+  )
+
+# Select the relevant columns
+forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
+  select(Date, ETS_M_seaso_Ad_Forecast, ETS_Lo_95, ETS_Hi_95)
 ```
 
 Now we will forecast the number of tourists from the Philippines to Zurich using the ETS AAM AND AAdM models.
@@ -506,10 +538,6 @@ fit <- tourism_ts %>%
 forecast <- fit %>%
   forecast(h = 15)
 
-# Extract the forecast for ETS_M_seaso_Ad
-forecast_ETS_M_seaso_Ad <- forecast %>%
-  filter(.model == "ETS_M_seaso_Ad") %>%
-  as.data.frame()
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
 plot <- forecast %>%
   autoplot(tourism_ts, level = 90, color = "blue", alpha = 0.5) +
@@ -711,7 +739,7 @@ if (length(tourism_ts) == nrow(exog_data)) {
   # Forecast the next 15 months, setting future exogenous variables to 0
   future_exog <- matrix(0, nrow = 15, ncol = 2)
   
-  forecast_values <- forecast(model, xreg = future_exog, h = 24)
+  forecast_values <- forecast(model, xreg = future_exog, h = 15)
   
   # Convert the forecast to a data frame
   forecast_arimax <- as.data.frame(forecast_values)
@@ -794,47 +822,47 @@ The main objective of this project is to accurately predict the number of visito
 Here are the forecasted values for the two models :
 
 ```{r}
-# Assuming forecast_arimax and forecast_ETS_M_seaso_Ad are already available
-
+##### ARIMAX #####
 # Rename the columns for clarity
 colnames(forecast_arimax) <- c("ARIMAX_Forecast", "ARIMAX_Lo_80", "ARIMAX_Hi_80", "ARIMAX_Lo_95", "ARIMAX_Hi_95", "Date")
 
 # Convert the 'Date' column to Date type for merging
 forecast_arimax$Date <- as.Date(forecast_arimax$Date)
 
-# Extract the relevant columns from forecast_ETS_M_seaso_Ad
-forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
-  select(Date = index, ETS_M_seaso_Ad_Forecast = .mean)
-
-# Convert the 'Date' column to Date type for merging
-forecast_ETS_M_seaso_Ad$Date <- as.Date(paste(forecast_ETS_M_seaso_Ad$Date, "01", sep = "-"), format = "%Y %b-%d")
+forecast_ETS_M_seaso_Ad$Date <- as.Date(forecast_ETS_M_seaso_Ad$Date)
+forecast_ETS_M_seaso_Ad
 
 # Merge the two data frames based on the Date
 combined_forecast <- merge(forecast_arimax, forecast_ETS_M_seaso_Ad, by = "Date")
 
-# Calculate the delta between the two forecasts
+# Calculate the average forecast and average confidence intervals
 combined_forecast <- combined_forecast %>%
-  mutate(Delta = ETS_M_seaso_Ad_Forecast - ARIMAX_Forecast)
+  mutate(
+    Avg_Forecast = (ARIMAX_Forecast + ETS_M_seaso_Ad_Forecast) / 2,
+    Avg_Lo_95 = (ARIMAX_Lo_95 + ETS_Lo_95) / 2,
+    Avg_Hi_95 = (ARIMAX_Hi_95 + ETS_Hi_95) / 2
+  )
 
-# Remove the unnecessary columns
-combined_forecast <- combined_forecast %>%
-  select(Date, ARIMAX_Forecast, ETS_M_seaso_Ad_Forecast, Delta)
+# Select the relevant columns
+final_forecast <- combined_forecast %>%
+  select(Date, Avg_Forecast, Avg_Lo_95, Avg_Hi_95)
+
 
 # Display the combined table using reactable
 reactable(
-  combined_forecast,
+  final_forecast,
   columns = list(
     Date = colDef(name = "Date"),
-    ARIMAX_Forecast = colDef(
-      name = "ARIMAX Forecast",
+    Avg_Forecast = colDef(
+      name = "Average Forecast",
       format = colFormat(digits = 2)
     ),
-    ETS_M_seaso_Ad_Forecast = colDef(
-      name = "ETS_M_seaso_Ad Forecast",
+    Avg_Lo_95 = colDef(
+      name = "Average 95% Lower CI",
       format = colFormat(digits = 2)
     ),
-    Delta = colDef(
-      name = "Delta",
+    Avg_Hi_95 = colDef(
+      name = "Average 95% Upper CI",
       format = colFormat(digits = 2)
     )
   ),
@@ -847,6 +875,9 @@ reactable(
   sortable = TRUE,
   resizable = TRUE
 )
+
+#save final forecast in a .csv
+write.csv(final_forecast, "../data/final_forecast.csv", row.names=FALSE)
 ```
 
 We can see that there is a significant difference between the two models. The differences (delta) are sometimes very high, for example -351, indicating that the two models capture different seasonal components or trends. Combining the two and taking their average would provide robust and balanced predictions.
