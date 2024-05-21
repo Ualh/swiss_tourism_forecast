@@ -86,8 +86,6 @@ The dataset contains information about the overnights stays by tourists in the v
 
 Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. We start by filtering the "Kanton" column to keep only the canton of Vaud.
 
-Here are the first 1000 instances of the raw data :
-
 ```{r vaud data}
 # Filter by canton Vaud 
 tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
@@ -116,8 +114,6 @@ Note that no missing values were found in the dataset.
 The data Zurich contained the total number of overnight stays in Zurich by tourists from different countries. We are interested in the number of overnight stays by tourists from the Philippines. *See appendix for more details on the table.*
 
 Thus, we are filtering the "Kanton" column and the 'Herkunftsland' column, keeping "Zurich" and "Philippinen" for the country of origin.
-
-Here is all the instances of the raw filtered data :
 
 ```{r Tourism zh and ph}
 #filter column 'Kanton' for Zurich
