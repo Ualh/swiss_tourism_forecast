@@ -94,7 +94,7 @@ tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
 #check for NAN
 sum(is.na(tourism_vaud))
 #show the data in a table using reactable
-reactable(head(tourism_vaud, 1000), 
+table_vaud <- reactable(head(tourism_vaud, 1000), 
           searchable = TRUE,
           defaultPageSize = 5,
           sortable = TRUE,
@@ -129,7 +129,7 @@ tourism_data_zurich %>% filter(is.na(value))
 
 tourism_data_zurich_philippines <- tourism_data_zurich %>% filter(Herkunftsland == "Philippinen")
 #show table using reactable
-reactable(tourism_data_zurich_philippines, 
+table_zh_ph <- reactable(tourism_data_zurich_philippines, 
           searchable = TRUE,
           defaultPageSize = 5,
           sortable = TRUE,
@@ -916,6 +916,11 @@ reactable(head(tourism_data_no_total, 1000),
           )
 ```
 
+## Vaud - Tourism Data
+```{r}
+table_vaud
+```
+
 ## ZH - Tourism Data
 
 We filtered the "Kanton" column to keep only the canton of Zurich.
@@ -937,6 +942,7 @@ reactable(head(tourism_data_zurich, 1000),
           showPageSizeOptions = TRUE,
           showSortable = TRUE
           )
+table_zh_ph
 ```
 
 There are 1869 missing values for the two sub-datasets. These missing values come from the 'value' column, creating gaps in the time series. We'll see later how we're going to process them to do modelling.
