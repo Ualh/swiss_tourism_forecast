@@ -304,7 +304,7 @@ interactive_plot
 
 ### Pattern
 
-We choose a multiplicative model for the STL decomposition of the number of trips from the Philippines to Zurich because the data (previous plot) shows increasing variance and larger fluctuations as the number of trips grows, suggesting that seasonal and trend components scale proportionally with the overall level of the series. *check the appendix for the additive decomposition and further seasonal graph*
+We choose a multiplicative model for the STL decomposition of the number of trips from the Philippines to Zurich because the data (previous plot) shows increasing variance and larger fluctuations as the number of trips grows, suggesting that seasonal and trend components scale proportionally with the overall level of the series. *check the appendix for the  decomposition and further seasonal graph*
 
 #### Decomposition
 
@@ -322,7 +322,7 @@ tourism_ts <- tourism_data_zurich_philippines %>%
 tourism_stl <- stl(tourism_ts, s.window = "periodic")
 
 # Plotting the results (transforming back by exponentiating)
-autoplot(tourism_stl) +
+stl_zh_m <- autoplot(tourism_stl) +
   labs(x = "Date", y = "Number of tourists", title = "Multiplicative STL Decomposition for number of tourists from Philippines to Zurich") +
   theme_minimal()
 
@@ -341,7 +341,7 @@ stl_zh <- stl(tourism_ts, s.window = "periodic") %>%
   labs(x = "Date", y = "Number of tourists", title = "STL Decomposition for number of tourists from Philippines to Zurich") +
   theme_minimal()
 ```
-
+We noted :
 -   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
 -   Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
 -   A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
@@ -350,7 +350,7 @@ stl_zh <- stl(tourism_ts, s.window = "periodic") %>%
 
 ```{r seaso zh}
 # several chart per month to see the seasonality
-ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
+seaso_plot_zh_2 <- ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 
 #debug
 #better to use gg_subseries to see the seasonality
@@ -525,6 +525,7 @@ forecast_ETS_M_seaso_Ad <- forecast_ETS_M_seaso_Ad %>%
 ```
 
 Now we will forecast the number of tourists from the Philippines to Zurich using the ETS AAM AND AAdM models.
+*see the appendix for a vizualisation of the 2 models*
 
 ```{r}
 # comparing several model
@@ -539,12 +540,11 @@ forecast <- fit %>%
   forecast(h = 15)
 
 # Plot the forecasts along with the historical data, and make the colors of the forecast a bit more transparent for distinguishably purposes
-plot <- forecast %>%
+plot_ets_AAM_AAdM <- forecast %>%
   autoplot(tourism_ts, level = 90, color = "blue", alpha = 0.5) +
   labs(title = "Forecast of tourists from Philippines to Zurich",
        x = "Date",
        y = "Number of tourists") + guides(colour = guide_legend(title = "Forecast"))
-plot
 ```
 
 We can see here the metrics of the two ETS models (AAM and AAdM) :
@@ -576,7 +576,7 @@ We observe that the damped model is better on almost all metrics.
 #### ARIMA
 
 We apply three ARIMA models and determine which one gives us the best accury in term of prediction :
-
+*see the appendix for a vizualisation of the 3 models*
 -   An ARIMA_auto, which will automatically determine the optimal values of the ARIMA parameters (p, d, q) using AIC criteria.
 -   An ARIMA_auto_seasonal, which works like the ARIMA_auto but takes into account the monthly seasonality of our data.
 -   ARIMA_auto_stepwise, which performs an exhaustive search over all possible combinations of parameters by disabling the stepwise and approximation options. It increases the accuracy of the model and do not take seasonal components into account.
@@ -595,13 +595,13 @@ forecast_arima <- fit_arima %>%
   forecast(h = 15)
 
 # Plot the forecasts along with the historical data
-plot_arima <- forecast_arima %>%
+plot_arima_zh <- forecast_arima %>%
   autoplot(tourism_ts, alpha = 0.3) +
   labs(title = "ARIMA Forecast of Tourists from the Philippines to Zurich",
        x = "Date",
        y = "Number of Tourists") +
   guides(colour = guide_legend(title = "Forecast"))
-plot_arima
+plot_arima_zh
 ```
 
 From the graph we can see that the ARIMA_auto_seasonal model gives more negative predictions over the next 15 months than the other two models. The ARIMA_auto_stepwise model predicts the highest values while the ARIMA_auto model lies between the two prediction curves.
@@ -644,7 +644,7 @@ The OxCGRT provides data on government responses to COVID-19, including a String
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
-Here you can observe the stringency index for the Philippines and Switzerland :
+*See the appendix for a vizualisation of the stringency index for the Philippines and Switzerland*
 
 ```{r}
 # Convert data to a time series object
@@ -684,7 +684,7 @@ merged_data$avg_stringency_index_SW[is.na(merged_data$avg_stringency_index_SW)] 
 
 
 # Create a ggplot of the stringency index
-ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippines")) +
+stringency_zh <- ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, color = "Philippines")) +
   geom_line() +
   geom_line(aes(y = avg_stringency_index_SW, color = "Switzerland")) +
   labs(title = "Stringency Index in the Philippines and Switzerland",
@@ -698,11 +698,11 @@ We see that Philippines had a higher stringency index than Switzerland all over 
 
 You can observe here the resulted data from the merge of the stringency index and the tourism data from the 2020s.
 
-You can observe here the resulted data from the merge of the stringency index and the tourism data :
+*You can observe in the appendix the resulted data from the merge of the stringency index and the tourism data*
 
 ```{r}
 #show merge data using reactable
-reactable(merged_data, 
+stringency_table <- reactable(merged_data, 
           searchable = TRUE,
           defaultPageSize = 5,
           sortable = TRUE,
@@ -720,6 +720,7 @@ reactable(merged_data,
 #### ARIMAX
 
 In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
+*see the appendix for a vizualisation of the ARIMAX model*
 
 ```{r}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -750,14 +751,13 @@ if (length(tourism_ts) == nrow(exog_data)) {
   forecast_arimax$Date <- seq(as.Date("2023-10-01"), by = "month",
                               length.out = 15)
   # Plot the forecast along with the actual data using autoplot from the forecast package
-  plot_forecast <- autoplot(forecast_values, series = "Forecast") +
+  plot_forecast_arimax <- autoplot(forecast_values, series = "Forecast") +
     autolayer(tourism_ts, series = "Actual Data") +
     labs(title = "ARIMAX Forecast of Tourists from the Philippines to Zurich",
          x = "Date",
          y = "Number of Tourists") +
     guides(colour = guide_legend(title = "Data Type"))
   
-  plot_forecast
     # Calculate evaluation metrics on the training data
   residuals <- residuals(model)
   mae <- mean(abs(residuals))
@@ -877,7 +877,7 @@ reactable(
 )
 
 #save final forecast in a .csv
-write.csv(final_forecast, "../data/final_forecast.csv", row.names=FALSE)
+#write.csv(final_forecast, "../data/final_forecast.csv", row.names=FALSE)
 ```
 
 We can see that there is a significant difference between the two models. The differences (delta) are sometimes very high, for example -351, indicating that the two models capture different seasonal components or trends. Combining the two and taking their average would provide robust and balanced predictions.
@@ -951,12 +951,17 @@ The graph shows the monthly number of overnight stays in Zurich from tourists of
 interactive_plot_zh_all
 ```
 
-## ZH -Additive STL
+## ZH - STL
 
 The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
 
 ```{r}
 stl_zh
+```
+
+The multiplicative time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
+```{r}
+stl_zh_m
 ```
 
 ## ZH - Seasonality
@@ -968,6 +973,10 @@ Seasonal sub-series plot permit to better visualize the monthly fluctuations of 
 ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE) +
   scale_color_viridis_d() +
   theme_minimal()
+```
+
+```{r}
+seaso_plot_zh_2
 ```
 
 We clearly observe here that the seasonality is not constant over time.
@@ -1002,6 +1011,25 @@ We see here the metrics of the ETS AAA model :
 
 ```{r}
 metrics_ets_AAA
+```
+
+## ZH - ETS M model
+
+```{r}
+plot_ets_AAM_AAdM
+```
+
+## ZH - ARIMA Models
+
+```{r}
+plot_arima_zh
+```
+
+## ZH - Stringency Index
+
+```{r}
+stringency_zh
+stringency_table
 ```
 
 ## ZH - Multiple Regression Analysis
@@ -1041,3 +1069,9 @@ model_metrics %>%
 ```
 
 The way higher AIC shows that this model is not the best.
+
+## ZH - ARIMAX Model
+```{r}
+plot_forecast_arimax
+```
+
