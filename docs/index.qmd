@@ -1070,7 +1070,7 @@ model_metrics %>%
 
 The way higher AIC shows that this model is not the best.
 
-## ZH Covid
+## ZH - Covid
 
 The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19. For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
