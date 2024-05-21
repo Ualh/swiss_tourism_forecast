@@ -631,15 +631,9 @@ According to the table of metrics, the ARIMA_auto_stepwise model appears to be t
 Now we are going to take into account the Covid period and see how this new information will impact our prediction models. The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The COVID-19 pandemic has had a devastating impact on the global tourism industry. From the start of 2020, governments around the world put in place strict restrictions to contain the spread of the virus, including border closures, mandatory quarantines and suspensions of international flights. These measures have led to a dramatic fall in international tourist arrivals, seriously disrupting economies dependent on tourism.\
 The Philippines had to follow strict policies during the pandemic as well.
 
-The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19. For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
-
 #### Data Integration
 
-The OxCGRT provides data on government responses to COVID-19, including a Stringency Index that measures the severity of lockdown measures. The Stringency Index is calculated based on nine key metrics: School closures, Workplace closures, Cancellation of public events, Restrictions on public gatherings, Closures of public transport, Stay-at-home requirements, International travel controls, etc… Each metric is scored from 0 to 100, with higher scores indicating stricter responses. The overall Stringency Index is the average score of these metrics, reflecting the strictest sub-regional policies if they vary.
-
-source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
-
-*See the appendix for a vizualisation of the stringency index for the Philippines and Switzerland*
+*See the appendix for a vizualisation of the stringency index for the Philippines and Switzerland and more details on how it was fetched*
 
 ```{r}
 # Convert data to a time series object
@@ -689,9 +683,7 @@ stringency_zh <- ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, 
                      labels = c("Philippines", "Switzerland"))
 ```
 
-We see that Philippines had a higher stringency index than Switzerland all over the period.
-
-You can observe here the resulted data from the merge of the stringency index and the tourism data from the 2020s.
+We observe that Philippines had a higher stringency index than Switzerland all over the period.
 
 *You can observe in the appendix the resulted data from the merge of the stringency index and the tourism data*
 
@@ -796,9 +788,7 @@ metrics_arima_table
 
 Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, while ARIMAX excels in MAE and MAPE. Depending on which metric is prioritized, either ARIMAX or ARIMA_auto_stepwise would be the preferred model.
 
-#### Other ideas
-
-Other ideas for taking into account the impact of Covid-19 in our prediction models would be: - Create a dummy variable that takes the value 1 during periods of confinement and severe restrictions, and 0 otherwise. This models the direct impact of the pandemic on tourist numbers. If there are missing values, the ARIMA method can be used to interpolate the missing values on the basis of the patterns observed in the available data with the use fill_gaps(). - Implement additional exogenous variables in our ARIMAX model, such as the number of Covid-19 deaths and/or the vaccination rate. - Jump regression models and GARCH models are powerful tools for analysing time series when there are sudden changes or periods of high volatility such as during the Covid-19 pandemic. - Apply machine learning techniques to capture non-linear and complex patterns such as random forest or gradient boosting or recurrent neural networks RNN.
+*see the appendix for other ideas that we had and that we could have implemented*
 
 # Model Selection
 
@@ -1028,6 +1018,10 @@ plot_arima_zh
 
 ## ZH - Stringency Index
 
+The OxCGRT provides data on government responses to COVID-19, including a Stringency Index that measures the severity of lockdown measures. The Stringency Index is calculated based on nine key metrics: School closures, Workplace closures, Cancellation of public events, Restrictions on public gatherings, Closures of public transport, Stay-at-home requirements, International travel controls, etc… Each metric is scored from 0 to 100, with higher scores indicating stricter responses. The overall Stringency Index is the average score of these metrics, reflecting the strictest sub-regional policies if they vary.
+
+source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
+
 ```{r}
 stringency_zh
 stringency_table
@@ -1071,8 +1065,15 @@ model_metrics %>%
 
 The way higher AIC shows that this model is not the best.
 
+## ZH Covid
+
+The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19. For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
+
 ## ZH - ARIMAX Model
 ```{r}
 plot_forecast_arimax
 ```
 
+## ZH - Other Ideas
+
+Other ideas for taking into account the impact of Covid-19 in our prediction models would be: - Create a dummy variable that takes the value 1 during periods of confinement and severe restrictions, and 0 otherwise. This models the direct impact of the pandemic on tourist numbers. If there are missing values, the ARIMA method can be used to interpolate the missing values on the basis of the patterns observed in the available data with the use fill_gaps(). - Implement additional exogenous variables in our ARIMAX model, such as the number of Covid-19 deaths and/or the vaccination rate. - Jump regression models and GARCH models are powerful tools for analysing time series when there are sudden changes or periods of high volatility such as during the Covid-19 pandemic. - Apply machine learning techniques to capture non-linear and complex patterns such as random forest or gradient boosting or recurrent neural networks RNN.
