@@ -74,7 +74,7 @@ sum(is.na(tourism_data_no_total))
 
 ### Tourism Data - Vaud
 
-Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. We start by filtering the "Kanton" column to keep only the canton of Vaud. Subsequently, we filter the "Herkunftsland" column by "Herkunftsland - Total." This step ensures that our analysis encompasses data representing the aggregate number of tourists from all origins, providing a comprehensive overview of tourism activity in the canton of Vaud. There are no missing values present in the filtered dataset.
+Given the two objectives of the project, we are going to filter the initial dataset by the "Kanton" column Vaud and  the "Herkunftsland" column by "Herkunftsland - Total."
 
 ```{r vaud data}
 # Filter by canton Vaud 
@@ -146,10 +146,6 @@ interactive_plot_total %>%
 ```
 
 The plot shows key trends in tourist visits to the canton of Vaud. There are noticeable dips in overnight stays at the year's start, typically due to holidays, with a significant drop in 2020 due to the COVID pandemic. Mainly, tourists in canton Vaud are from Switzerland, followed by France *(see appendix 8.2)*. Swiss tourists show a rising trend excluding the pandemic period. Overall, the data displays a seasonal pattern with fewer tourists at year-end and a peak during summer. Future forecasts should consider these seasonal variations and changing trends.
-
-### Decomposition
-
-We have process an additive decomposition of the time series into three components: *trend, seasonality and residual*. These components will allow us to understand how they contribute to the variations observed in Swiss tourism data. *see the appendix for more details on the decomposition*
 
 ```{r vaud decomposition}
 # Convert data to a time series object
@@ -232,13 +228,6 @@ interactive_plot <- interactive_plot %>%
 # Display the interactive plot
 interactive_plot
 ```
-
-### Pattern
-
-We choose a multiplicative model for the STL decomposition of the number of trips from the Philippines to Zurich because the data (previous plot) shows increasing variance and larger fluctuations as the number of trips grows, suggesting that seasonal and trend components scale proportionally with the overall level of the series. *check the appendix for the decomposition and further seasonal graph*
-
-#### Decomposition
-
 ```{r zh decomp}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines %>%
@@ -279,12 +268,6 @@ seaso_plot_zh_2 <- ggsubseriesplot(tourism_ts) + ylab("Number of tourists") + xl
 #better to use gg_subseries to see the seasonality
 #tourism_ts %>% gg_subseries(value) + ylab("Number of tourists") + xlab("Month") + ggtitle("Seasonal subseries plot")
 ```
-
-We noted :
-
--   An upward trend until around 2020, when it falls sharply because of the pandemic and travel restrictions. The pandemic had a longer effect on the Philippine tourism, which stopped for a longer period (around 2 years or more).
--   Multiple peaks in the seasonal monthly component. These fluctuations are due to their calendar. Philippines start their summer holidays earlier than we do (31 of May - 29 of July) and have longer La Toussaint holidays (5 October - 18 October - 28 October).
--   A residual component with moderate variability which increases from 2020 onwards, indicating the influence of unforeseen or exceptional events (such as the pandemic) that have disrupted the usual models.
 
 # Modelling
 
@@ -415,10 +398,6 @@ aic_tslm_vaud <- Model_vaud_stringency %>%
 ## Zurich and Philippines
 
 In this section, we focus on the number of visitors from the Philippines to Zurich. We use the Naive model as a benchmark for ETS and ARIMA models to forecast visitors over a 15-month horizon.
-
-### Forecast without dealing with Covid
-
-We first forecast the number of tourists without considering the Covid period to understand its impact.
 
 #### ETS
 
@@ -587,15 +566,6 @@ metrics_arima_table <- metrics_arima %>%
   kable("html", caption = "Model Accuracy Metrics with AIC Values") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
-
-### Forecasting Amidst the Covid-19 Pandemic
-
-Next, we consider the Covid period to see its impact on our prediction models.
-
-#### Data Integration
-
-*See the appendix for a vizualisation of the stringency index for the Philippines and Switzerland and more details on how it was fetched*
-
 ```{r zh stringency index}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines
@@ -643,11 +613,6 @@ stringency_zh <- ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, 
   scale_color_manual(values = c("#3C5B6F", "darkred"),
                      labels = c("Philippines", "Switzerland"))
 ```
-
-The Philippines had a higher stringency index than Switzerland throughout the period.
-
-*You can observe in the appendix the resulted data from the merge of the stringency index and the tourism data*
-
 ```{r zh stringency table}
 #show merge data using reactable
 stringency_table <- reactable(merged_data, 
