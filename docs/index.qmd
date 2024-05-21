@@ -601,7 +601,6 @@ plot_arima_zh <- forecast_arima %>%
        x = "Date",
        y = "Number of Tourists") +
   guides(colour = guide_legend(title = "Forecast"))
-plot_arima_zh
 ```
 
 From the graph we can see that the ARIMA_auto_seasonal model gives more negative predictions over the next 15 months than the other two models. The ARIMA_auto_stepwise model predicts the highest values while the ARIMA_auto model lies between the two prediction curves.
