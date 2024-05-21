@@ -16,8 +16,6 @@ format:
     self-contained: true
     code-summary: "Click to show code"
     # pdf: default # use this if you want to render pdfs instead
-abstract: |
-  The following Forecasting project focuses on forecasting the overnight stays of visitors in the Swiss canton of Vaud and from the Philippines to Zurich from October 2023 to December 2024. Utilizing comprehensive tourism data, the project reveals insights into the trends and seasonal patterns in both regions, emphasizing the varied impacts of the COVID-19 pandemic on international tourism dynamics. The forecasting phase employs Error, Trend, Seasonality (ETS) and AutoRegressive Integrated Moving Average (ARIMA) models, which are chosen based on their ability to accurately capture underlying data patterns, including seasonality and trend shifts due to global events. The project's findings provide actionable insights for tourism management and strategic planning in the regions studied, highlighting the need for adaptive strategies in response to global disruptions such as pandemics. 
 ---
 
 ```{r loading libraries, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
@@ -37,7 +35,9 @@ The main objectives of this project is to predict :
 
 -   The overnight stays of visitors from Philippines to Zürich, from October 2023 until December 2024.
 
-# Cleaning & Wrangling
+## Cleaning & Wrangling
+
+*Check the appendix for the initial dataset*
 
 ```{r load}
 # Load the data in folder data named Dataset_tourism.xlsx)
@@ -174,7 +174,7 @@ The decomposition analysis unveils significant trends in the data: a clear upwar
 
 # EDA - Zurich
 
-As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. The yellow curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period. There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide. At first glance, there are regular seasonal peaks for most countries which also suggest the presence of seasonality in tourism in the canton of Zurich. *check the Appendix for more details with a Overall Zurichs Visitors graph*
+As for Vaud, the most frequent visitors to Zurich are Swiss. Germany and United States are the two main foreign countries to visit Zurich. This can be explained by the fact that the canton of Zurich is closer to Germany and therefore easier to reach. The same applies to France with the canton of Vaud. The yellow curve represents the Philippines. The curve is flat and shows a considerably small number of trips from this country over the period. There is a drastic fall in 2020 caused by COVID-19. The pandemic has had a significant impact on the tourism industry worldwide. At first glance, there are regular seasonal peaks for most countries which also suggest the presence of seasonality in tourism in the canton of Zurich. *check the Appendix for more details for Overall Zurichs Visitors graph*
 
 ## Zurich and Philippines Visitors
 
@@ -414,15 +414,15 @@ aic_tslm_vaud <- Model_vaud_stringency %>%
 
 ## Zurich and Philippines
 
-In this section, we will focus on the number of visitors from the Philippines to Zurich. We will use the Naive as a benchmark for ETS and ARIMA models to forecast the number of visitors from the Philippines to Zurich over a 15-month horizon.
+In this section, we focus on the number of visitors from the Philippines to Zurich. We use the Naive model as a benchmark for ETS and ARIMA models to forecast visitors over a 15-month horizon.
 
 ### Forecast without dealing with Covid
 
-As we have seen, Covid has had a significant impact on the number of tourists in Zurich. We will first forecast the number of tourists without taking into account the Covid period. This will allow us to see the impact of the pandemic on the forecasts.
+We first forecast the number of tourists without considering the Covid period to understand its impact.
 
 #### ETS
 
-We first run a NAIVE model to have a benchmark for the other model. And a AAA model for the ETS model for ensuring that the model is indeed worse than a multiplicative one, based on our previous observations. *see appendix for the plots and metrics of those 2 models*
+We run a Naive model as a benchmark and a AAA model for the ETS model to compare against a multiplicative model.  *see appendix for the plots and metrics of those 2 models*
 
 ```{r warning=FALSE}
 ###### NAIVE part #####
@@ -539,13 +539,13 @@ metrics_ets <- metrics_with_aic %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-Now we will forecast the number of tourists from the Philippines to Zurich using the ETS AAM AND AAdM models. *see the appendix for a vizualisation and metrics of the 2 models*
+Next, we forecast tourists using ETS AAM and AAdM models. The damped model performs better on most metrics. *see the appendix for a vizualisation and metrics of the 2 models*
 
 We observe that the damped model is better on almost all metrics.
 
 #### ARIMA
 
-We also did 3 ARIMA models for comparison purposes but as they were not as good as the ETS models, we will not go into details here. *see the appendix for the vizualisation of the 3 models*
+We also ran three ARIMA models for comparison, but they underperformed compared to ETS models. *see the appendix for the vizualisation of the 3 models*
 
 ```{r zh arima}
 # Fit an automatic ARIMA model
@@ -590,7 +590,7 @@ metrics_arima_table <- metrics_arima %>%
 
 ### Forecasting Amidst the Covid-19 Pandemic
 
-Now we are going to take into account the Covid period and see how this new information will impact our prediction models. Indeed, as we have seen for vaud the pandemic had a significant impact on the number of tourists.
+Next, we consider the Covid period to see its impact on our prediction models.
 
 #### Data Integration
 
@@ -644,7 +644,7 @@ stringency_zh <- ggplot(merged_data, aes(x = date, y = avg_stringency_index_PH, 
                      labels = c("Philippines", "Switzerland"))
 ```
 
-We observe that Philippines had a higher stringency index than Switzerland all over the period.
+The Philippines had a higher stringency index than Switzerland throughout the period.
 
 *You can observe in the appendix the resulted data from the merge of the stringency index and the tourism data*
 
@@ -667,7 +667,7 @@ stringency_table <- reactable(merged_data,
 
 #### ARIMAX
 
-In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results. *see the appendix for a vizualisation and metrics of the ARIMAX model*
+We conduct a multiple regression analysis with the number of tourists as the dependent variable and the average stringency index for Switzerland and the Philippines as explanatory variables. The results show counter-intuitive impacts: increased stringency in the Philippines is associated with more tourists, while increased stringency in Switzerland leads to fewer tourists. Only 9.3% of the variance is explained, indicating other influencing factors. We apply an ARIMAX model, fixing seasonality as TRUE and stepwise and approximation as FALSE for a thorough search.  *See the appendix for ARIMAX model visualizations and metrics*
 
 ```{r zh arimax}
 # Transform to a time series object with frequency 12 (monthly data)
@@ -742,9 +742,9 @@ metrics_arimax <- model_metrics %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, while ARIMAX excels in MAE and MAPE. Depending on which metric is prioritized, either ARIMAX or ARIMA_auto_stepwise would be the preferred model.
+Overall, ARIMA_auto_stepwise balances RMSE and AIC well, while ARIMAX excels in MAE and MAPE. Depending on the prioritized metric, either ARIMAX or ARIMA_auto_stepwise is preferred. 
 
-*see the appendix for other ideas that we had and that we could have implemented*
+*See the appendix for additional ideas we considered*
 
 # Model Selection
 
@@ -766,7 +766,7 @@ data.frame(
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-In comparing these models, we prioritize metrics such as AIC, RMSE, MAE and MAPE as lower values indicate better forecasting accuracy. After evaluating the performance of the models, it is evident that ARIMA (5,1,0)(0,1,1) consistently achieves the lowest AIC, RMSE and MAE. Additionally, considering metrics MASE, which provide insights into the relative accuracy of the models compared to a baseline, ARIMA (5,1,0)(0,1,1) emerges as the most favorable choice. Therefore, based on these criteria, ARIMA (5,1,0)(0,1,1) is the preferred model for forecasting the number of tourists in Vaud. A MAPE value of 9.04 means that, on average, the forecasts produced by the chosen model, ARIMA (5,1,0)(0,1,1), deviate from the actual values by approximately 9.04%.This suggests that the model is performing reasonably well in capturing the underlying patterns and trends in the data, but there is still room for improvement.
+When comparing forecasting models, we prioritize metrics like AIC, RMSE, MAE, and MAPE, where lower values indicate better accuracy. ARIMA (5,1,0)(0,1,1) consistently achieves the lowest AIC, RMSE, and MAE, and also performs well on MASE, indicating high relative accuracy. Therefore, ARIMA (5,1,0)(0,1,1) is the preferred model for forecasting tourist numbers in Vaud. Its MAPE of 9.04% suggests that, on average, the model's forecasts deviate from actual values by 9.04%, indicating reasonable performance with some room for improvement.
 
 ```{r vd forecast}
 # Filter forecasts for ARIMA_dif model
@@ -826,7 +826,7 @@ data.frame(
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
-The main objective of this project is to accurately predict the number of visitors, which is why we will first analyse the best MAE and RMSE values. The model with the lowest values is ETS_M_seaso_Ad. It is therefore recommended because it shows more accurate predictions, which are crucial for ensuring accurate and usable information for decision-making in the Zurich tourism sector. However, ARIMAX has a better AIC and MAPE. Using both forecasts hand in hand could be a better approach to have a more robust forecast than selecting only one model. This 'forecasting ensemble' would provide increased robustness, reduced bias and improved overall performance.
+The project's main objective is to accurately predict the number of visitors, focusing on the best MAE and RMSE values. The ETS_M_seaso_Ad model has the lowest MAE and RMSE, making it the preferred choice for precise predictions essential for decision-making in Zurich's tourism sector. However, ARIMAX performs better in AIC and MAPE. Combining both forecasts could offer a more robust prediction, providing increased robustness, reduced bias, and improved overall performance through a ‘forecasting ensemble’ approach.
 
 *Check the Appendix for the forecasted values*
 
@@ -893,13 +893,7 @@ We can see that there is a significant difference between the two models. The di
 
 # Conclusion
 
-The project analyzed tourism data to predict the number of overnight stays of tourists in Vaud and from the Philippines to Zurich in the period from October 2023 to December 2024. The study focused on the cantons of Vaud and Zurich, adapting the analysis to specific regional and international tourism dynamics.
-
-A preliminary analysis of the data revealed key patterns and trends, such as the significant impact of seasonal fluctuations and the COVID-19 pandemic on tourist behavior. In Vaud, the presence of a recurring seasonal pattern and a changing trend has highlighted the need for models that can adapt to such fluctuations. The analysis conducted in Zurich revealed specific periods of high tourist activity that correspond to the holiday calendar in the Philippines, which provided valuable information for the development of targeted tourism strategies.
-
-The use of forecasting models such as ETS and ARIMA has demonstrated their effectiveness in identifying these complex patterns, providing reliable forecasts of future tourist flows. The models were selected based on their ability to account for seasonality, trends and significant impacts of global events such as the pandemic, which were important for accurate forecasting.
-
-In conclusion, it should be noted that this analysis has revealed a special impact of global events on tourism. This data is important for strategic planning and decision-making in the tourism cantons of Vaud and Zurich. In the future, we recommend continued monitoring and adaptive forecasting to take into account unforeseen global impacts, ensuring sustainable growth of the tourism industry in these regions.
+In conclusion, this analysis highlighted the significant impact of global events on tourism in Vaud and Zurich. Seasonal patterns and the COVID-19 pandemic notably influenced tourist behavior. Forecasting models like ETS and ARIMA effectively captured these patterns, providing reliable predictions for future tourist flows. This data is crucial for strategic planning and decision-making in these cantons. We recommend ongoing monitoring and adaptive forecasting to account for unforeseen global impacts, ensuring sustainable tourism growth in Vaud and Zurich.
 
 # Appendix
 
