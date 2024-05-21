@@ -309,7 +309,7 @@ In this section we will focus on the total number of visitors in Vaud. We will u
 
 The ETS (Error, Trend, Seasonality) forecast model presents numerous advantages in predicting the number of visitors to canton Vaud over a 15-month horizon due to its ease of implementation and reliability of results. The model is based on using trend and seasonality of past data to predict future without request of extra features.
 
-```{r}
+```{r vd ets aaa}
 ets_vaud <- ets(vaud_ts, model = "AAA")
 forecast_ets_vaud <- forecast(ets_vaud, h = 15) 
 
@@ -374,7 +374,7 @@ The OxCGRT taken from [Our World In Data](https://datacatalog.med.nyu.edu/datase
 
 In our effort to forecast the number of tourists in Vaud for the next 15 months, we've utilized a Time Series Linear Regression (TSLM) model. This approach allows us to incorporate the stringency index for Switzerland into our forecasting framework effectively. Given our expectation of no restrictions for the next 15 months, we've set the stringency index to 0 for this period. This decision reflects our anticipation of a return to pre-pandemic levels of travel freedom and mobility. By incorporating this assumption into our forecasting model, we aim to provide a more optimistic outlook for tourist numbers in Vaud.
 
-```{r}
+```{r vd stringency}
 stringency_df <- read.csv(here("data/stringency_index.csv"))
 
 stringency_switzerland <- filter(stringency_df, location == "Switzerland")
@@ -569,7 +569,7 @@ We observe that the damped model is better on almost all metrics.
 
 We also did 3 ARIMA models for comparison purposes but as they were not as good as the ETS models, we will not go into details here. *see the appendix for the vizualisation of the 3 models*
 
-```{r}
+```{r zh arima}
 # Fit an automatic ARIMA model
 fit_arima <- tourism_ts %>%
   model(ARIMA_auto = ARIMA(value),
@@ -591,7 +591,7 @@ plot_arima_zh <- forecast_arima %>%
 
 *You can also check the appendix for the metrics of the ARIMA models*
 
-```{r}
+```{r zh arima metrics}
 # Extract AIC values
 aic_values <- fit_arima %>%
   glance() %>%
@@ -618,7 +618,7 @@ Now we are going to take into account the Covid period and see how this new info
 
 *See the appendix for a vizualisation of the stringency index for the Philippines and Switzerland and more details on how it was fetched*
 
-```{r}
+```{r zh stringency}
 # Convert data to a time series object
 tourism_ts <- tourism_data_zurich_philippines
 #rename Date as date
@@ -670,7 +670,7 @@ We observe that Philippines had a higher stringency index than Switzerland all o
 
 *You can observe in the appendix the resulted data from the merge of the stringency index and the tourism data*
 
-```{r}
+```{r zh stringency table}
 #show merge data using reactable
 stringency_table <- reactable(merged_data, 
           searchable = TRUE,
@@ -692,7 +692,7 @@ stringency_table <- reactable(merged_data,
 In our multiple regression analysis, with the number of tourists as the value of interest and the average stringency index as the explanatory variable for Switzerland and Philippines. In the table of characteristics, see Appendix, the stringency indices have opposite impacts: an increase in stringency in the Philippines is associated with an increase in tourism, while an increase in stringency in Switzerland is associated with a decrease in tourism, for a confidence interval of 95%. These results are counter-intuitive. Furthermore, only 9.3% of the variance in the model is explained, which means that the stringency index is not the only factor that influences the number of tourists from the Philippines to Zurich. We will apply an ARIMAX model to take into account the stringency index as an exogenous variable. We fix seasonality as TRUE and stepwise and approximation as FALSE to have a more thorough search for the best model, as we saw before this provided better results.
 *see the appendix for a vizualisation and metrics of the ARIMAX model*
 
-```{r}
+```{r zh arimax}
 # Transform to a time series object with frequency 12 (monthly data)
 tourism_ts <- ts(merged_data$value, frequency = 12, start = c(2005, 1))  # Adjust the start time as per your data
 
@@ -748,7 +748,7 @@ if (length(tourism_ts) == nrow(exog_data)) {
 }
 ```
 
-```{r}
+```{r zh arimax metrics}
 #show metric in html
 model_metrics <- data.frame(
   Model = "ARIMAX",
@@ -774,7 +774,7 @@ Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, wh
 ## Vaud
 
 In the model selection process, we compare the performance of different forecasting models using various metrics to determine which model provides the most accurate and reliable forecasts for the number of tourists in Vaud.
-```{r}
+```{r vd model selection}
 # Create the data frame for metrics
 data.frame(
   model = c("ETS Vaud", "ARIMA_auto", "ARIMA_dif", "TSLM Vaud"),
@@ -789,7 +789,7 @@ data.frame(
 ```
 In comparing these models, we prioritize metrics such as AIC, RMSE, MAE and MAPE as lower values indicate better forecasting accuracy. After evaluating the performance of the models, it is evident that ARIMA (5,1,0)(0,1,1) consistently achieves the lowest AIC, RMSE and MAE. Additionally, considering metrics MASE, which provide insights into the relative accuracy of the models compared to a baseline, ARIMA (5,1,0)(0,1,1) emerges as the most favorable choice. Therefore, based on these criteria, ARIMA (5,1,0)(0,1,1) is the preferred model for forecasting the number of tourists in Vaud. A MAPE value of 9.04 means that, on average, the forecasts produced by the chosen model, ARIMA (5,1,0)(0,1,1), deviate from the actual values by approximately 9.04%.This suggests that the model is performing reasonably well in capturing the underlying patterns and trends in the data, but there is still room for improvement.
 
-```{r}
+```{r vd forecast}
 # Filter forecasts for ARIMA_dif model
 forecast_arima_dif <- forecast_arima_vaud %>%
   filter(.model == "ARIMA_dif")
@@ -835,7 +835,7 @@ forecast_vaud_finaltable <- reactable(
 
 The performance measures of each of the models we have predicted help us to select the model that best fits our data, i.e. the model that best fits between goodness of fit and complexity.
 
-```{r}
+```{r zh model selection}
 data.frame(
   model = c("NAIVE", "ETS_M_seaso", "ETS_M_seaso_Ad", "ARIMA_auto", "ARIMA_auto_seasonal", "ARIMA_auto_stepwise", "ARIMAX"),
   RMSE = c(135, 85.7, 74.7, 113, 105, 104, 65),
@@ -852,7 +852,7 @@ The main objective of this project is to accurately predict the number of visito
 
 *Check the Appendix for the forecasted values*
 
-```{r}
+```{r zh forecast}
 ##### ARIMAX #####
 # Rename the columns for clarity
 colnames(forecast_arimax) <- c("ARIMAX_Forecast", "ARIMAX_Lo_80", "ARIMAX_Hi_80", "ARIMAX_Lo_95", "ARIMAX_Hi_95", "Date")
@@ -949,7 +949,7 @@ reactable(head(tourism_data_no_total, 1000),
 ```
 
 ## Vaud - Tourism Data
-```{r}
+```{r vaud all}
 tourism_vaud
 ```
 
@@ -980,7 +980,7 @@ interactive_plot %>%
 ```
 
 ## Vd - STL
-```{r}
+```{r VD STL}
 stl_vd
 ```
 
@@ -1035,7 +1035,7 @@ There are 1869 missing values for the two sub-datasets. These missing values com
 
 The graph shows the monthly number of overnight stays in Zurich from tourists of different countries.
 
-```{r}
+```{r zh all}
 # Display the interactive plot
 interactive_plot_zh_all
 ```
@@ -1044,12 +1044,12 @@ interactive_plot_zh_all
 
 The additive time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
 
-```{r}
+```{r zh}
 stl_zh
 ```
 
 The multiplicative time series decomposition of the monthly overnight stays for tourists coming from the Philippines to the canton of Zurich shows:
-```{r}
+```{r zh_m}
 stl_zh_m
 ```
 
@@ -1057,14 +1057,14 @@ stl_zh_m
 
 Seasonal sub-series plot permit to better visualize the monthly fluctuations of each year, from 2005 to 2023.
 
-```{r}
+```{r zh seasonality}
 # Plot the seasonality in one chart
 ggseasonplot(tourism_ts, year.labels = TRUE, year.labels.left = TRUE) +
   scale_color_viridis_d() +
   theme_minimal()
 ```
 
-```{r}
+```{r zh seasonality 2}
 seaso_plot_zh_2
 ```
 
@@ -1076,7 +1076,7 @@ The months of May to July and October seem to have visitor peaks, which may indi
 
 The graph shows the historical trend in the number of tourists from the Philippines to Zurich and the forecasts for the next 15 months using the naive model. We took the graph representing the total number of tourists coming from the Philippines to Zurich.
 
-```{r}
+```{r zh_naive}
 plot_naive
 ```
 
@@ -1086,13 +1086,13 @@ The blue areas represent the 80% (darker) and 95% (lighter) confidence intervals
 
 We can see here the metrics of the naive model :
 
-```{r}
+```{r zh_naive_metrics}
 metrics_naive
 ```
 
 ## ZH - ETS AAA model
 
-```{r}
+```{r zh_ets}
 plot_ets_AAA
 ```
 
@@ -1100,18 +1100,18 @@ Clearly see here that the confidence interval is too big, almost like a naive fo
 
 We see here the metrics of the ETS AAA model :
 
-```{r}
+```{r zh_ets_metrics}
 metrics_ets_AAA
 ```
 
 ## ZH - ETS M model
 
-```{r}
+```{r zh_ets_m}
 plot_ets_AAM_AAdM
 ```
 
 
-```{r}
+```{r zh_ets_m_metrics}
 metrics_ets
 ```
 
@@ -1123,7 +1123,7 @@ We apply three ARIMA models and determine which one gives us the best accury in 
 -   An ARIMA_auto_seasonal, which works like the ARIMA_auto but takes into account the monthly seasonality of our data.
 -   ARIMA_auto_stepwise, which performs an exhaustive search over all possible combinations of parameters by disabling the stepwise and approximation options. It increases the accuracy of the model and do not take seasonal components into account.
 
-```{r}
+```{r zh_arima}
 plot_arima_zh
 ```
 
@@ -1131,7 +1131,7 @@ From the graph we can see that the ARIMA_auto_seasonal model gives more negative
 
 Here are the metrics of the ARIMA model :
 
-```{r}
+```{r zh_arima_metrics}
 metrics_arima_table
 ```
 
@@ -1144,7 +1144,7 @@ The OxCGRT provides data on government responses to COVID-19, including a String
 
 source - [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394)
 
-```{r}
+```{r zh stringency}
 stringency_zh
 stringency_table
 ```
@@ -1155,7 +1155,7 @@ Simple yet effective, if the relationships between the covariates and the depend
 
 Here is a summary of the effect of the variables on the number of tourists from the Philippines to Zurich :
 
-```{r}
+```{r zh_regression}
 # Fit a multiple regression model
 model <- lm(value ~ avg_stringency_index_PH + avg_stringency_index_SW, data = merged_data)
 
@@ -1174,7 +1174,7 @@ We observe that the p-value are lower for Switzerland than for Philippines. This
 
 We can observe here the metrics:
 
-```{r}
+```{r zh_regression_metrics}
 #create a table with the metrics of the model and show it as an html
 model_metrics <- model %>%
   broom::glance()
@@ -1192,12 +1192,12 @@ The way higher AIC shows that this model is not the best.
 The COVID-19 pandemic is considered a Black Swan event due to its unpredictable nature and global impact. The question is how can you incorporate this event in model predictions ? Adjust forecasts: include covariates that capture the effects of the pandemic. This allows us to adjust our forecasts to take account of the impact of COVID-19. For example, you could include a covariate that captures the effect of closures or travel restrictions on tourism data. Scenario analysis: run scenario simulations to analyse the potential impact of different COVID-19 scenarios on our forecasts. By analysing the different possible outcomes, you can better prepare for the uncertainties associated with the pandemic. Sensitivity analysis: assess the sensitivity of your forecasts to changes in assumptions or key parameters. By performing a sensitivity analysis, you can identify the factors that have the greatest impact on your forecasts and assess the robustness of your models.
 
 ## ZH - ARIMAX Model
-```{r}
+```{r zh_arimax}
 plot_forecast_arimax
 ```
 
 Here are the metrics of the ARIMAX model with the metrics of the ARIMA model for comparison :
-```{r}
+```{r zh_arimax_metrics}
 metrics_arimax
 metrics_arima_table
 ```
@@ -1208,7 +1208,7 @@ Other ideas for taking into account the impact of Covid-19 in our prediction mod
 
 ## ZH - Final Forecast Table
 
-```{r}
+```{r zh_final_forecast}
 final_forecast_table_zh
 ```
 
