@@ -84,30 +84,14 @@ The dataset contains information about the overnights stays by tourists in the v
 
 ### Tourism Data - Vaud
 
-Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. We start by filtering the "Kanton" column to keep only the canton of Vaud.
+Given the two objectives of the project, we are going to filter the initial dataset in order to keep and analyse only the cantons of interest. We start by filtering the "Kanton" column to keep only the canton of Vaud. Subsequently, we filter the "Herkunftsland" column by "Herkunftsland - Total." This step ensures that our analysis encompasses data representing the aggregate number of tourists from all origins, providing a comprehensive overview of tourism activity in the canton of Vaud.  There are no missing values present in the filtered dataset.
 
 ```{r vaud data}
 # Filter by canton Vaud 
 tourism_vaud <- tourism_data %>% filter(Kanton == "Vaud")
 #check for NAN
 sum(is.na(tourism_vaud))
-#show the data in a table using reactable
-table_vaud <- reactable(head(tourism_vaud, 1000), 
-          searchable = TRUE,
-          defaultPageSize = 5,
-          sortable = TRUE,
-          filterable = TRUE,
-          pagination = TRUE,
-          bordered = TRUE,
-          highlight = TRUE,
-          striped = TRUE,
-          compact = TRUE,
-          showPageSizeOptions = TRUE,
-          showSortable = TRUE
-          )
 ```
-
-Note that no missing values were found in the dataset.
 
 ### Tourism Data - Zurich and Philippines
 
@@ -144,39 +128,7 @@ Filtering for `Philippinen` solved the problem of missing data we had with all c
 
 # EDA - Vaud
 
-## International Visitors in Vaud
-
-The graph shows the monthly number of overnight stays in Vaud from tourists of different countries. The period runs from January 2005 to September 2023.
-
-```{r vaud all plot}
-# Create the ggplot object
-plot_vaud <- tourism_vaud %>% 
-  filter(Herkunftsland != 'Herkunftsland - Total') %>%
-  ggplot(aes(x = Date, y = value, group = Herkunftsland, color = Herkunftsland,
-             text = paste("Country:", Herkunftsland, "Trips:", value))) +  # Added text for tooltip
-  geom_line(show.legend = FALSE) + 
-  scale_color_viridis_d() +  # Use viridis color palette
-  labs(title = "Number of visitors from Each Country to Vaud",
-       x = "Date",
-       y = "Number of Trips") +
-  theme_minimal()
-
-# Convert to an interactive plotly object with specified width and height
-interactive_plot <- ggplotly(plot_vaud, tooltip = "text", width = 700, height = 300)
-
-
-# Adjust plotly settings 
-interactive_plot <- interactive_plot %>%
-  layout(
-    margin = list(l = 60, r = 60, b = 60, t = 80),
-    showlegend = FALSE # Remove legend
-  )
-
-# Display the interactive plot
-interactive_plot
-```
-
-The time plot shows key trends in tourist visits to the canton of Vaud. Mainly, tourists are from Switzerland, followed by France. There are noticeable dips in overnight stays at the year's start, typically due to holidays, with a significant drop in 2020 due to the COVID pandemic. Swiss tourists show a rising trend excluding the pandemic period. Overall, the data displays a seasonal pattern with fewer tourists at year-end and a peak during summer. Future forecasts should consider these seasonal variations and changing trends.
+## Visitors in Vaud
 
 Graphical view of total number of tourists in canton Vaud :
 
@@ -193,18 +145,17 @@ plot_vaud_total <- tourism_vaud_total %>%
   theme_minimal()
 
 # Convert to an interactive plotly object with specified width and height
-interactive_plot_total <- ggplotly(plot_vaud_total, width = 700, height = 300)
+interactive_plot_total <- ggplotly(plot_vaud_total, width = 600, height = 400)
 
 # Adjust plotly settings
-interactive_plot_total <- interactive_plot_total %>%
+interactive_plot_total %>%
   layout(
     margin = list(l = 60, r = 60, b = 60, t = 80),
     showlegend = FALSE  # Remove legend if any
   )
-
-# Display the interactive plot
-interactive_plot_total
 ```
+
+The plot shows key trends in tourist visits to the canton of Vaud. There are noticeable dips in overnight stays at the year's start, typically due to holidays, with a significant drop in 2020 due to the COVID pandemic. Mainly, tourists in canton Vaud are from Switzerland, followed by France *(see appendix 8.2)*.  Swiss tourists show a rising trend excluding the pandemic period. Overall, the data displays a seasonal pattern with fewer tourists at year-end and a peak during summer. Future forecasts should consider these seasonal variations and changing trends.
 
 ### Decomposition
 
@@ -229,13 +180,7 @@ vaud_ts <- tourism_vaud_total %>%
   theme_minimal()
 ```
 
-The main insights from this decomposition reflect what we have already observed.
-
--   A clear upward trend until around 2020, when it peaks before falling sharply as a result of the pandemic and travel restrictions.
-
--   Monthly seasonality, with clear and regular fluctuations due to seasonal factors.
-
--   A stable residual component until 2020. After this period, there is a slight increase in volatility which may indicate that other events are having an impact on this time series which are not captured by the first two components.
+The decomposition analysis unveils significant trends in the data: a clear upward trajectory until 2020 followed by a sharp decline due to pandemic-induced travel restrictions, alongside evident monthly seasonality marked by regular fluctuations. Notably, the residual component remains stable until 2020, after which a slight uptick in volatility suggests potential external influences not captured by trend and seasonality.
 
 # EDA - Zurich
 
@@ -267,7 +212,7 @@ p <- ggplot(data, aes(x = Date, y = Trips, group = Herkunftsland,
   theme_minimal()
 
 # Convert to an interactive plotly object
-interactive_plot_zh_all <- ggplotly(p, tooltip = "text", width = 600, height = 600)
+interactive_plot <- ggplotly(p, tooltip = "text", width = 600, height = 600)
 
 # Adjust plotly settings 
 interactive_plot_zh_all <- interactive_plot %>%
@@ -369,20 +314,28 @@ Finally, we select the best model based on a detailed assessment of forecasting 
 
 ## Total number of visitors in Vaud
 
-In this section we will focus on the total number of visitors in Vaud. We will use the ETS and ARIMA models to forecast the number of visitors in Vaud over a 15-month horizon.
+In this section we will focus on the total number of visitors in Vaud. We will use the ETS, ARIMA and TSRM models to forecast the number of visitors in Vaud over a 15-month horizon.
 
-### ETS
+### ETS model
 
 The ETS (Error, Trend, Seasonality) forecast model presents numerous advantages in predicting the number of visitors to canton Vaud over a 15-month horizon due to its ease of implementation and reliability of results. The model is based on using trend and seasonality of past data to predict future without request of extra features.
 
 ```{r}
 ets_vaud <- ets(vaud_ts, model = "AAA")
-forecast_ets_vaud <- forecast(ets_vaud, h = 24) %>% plot(main = "Forecast of visitors in Vaud", xlab = "Date", ylab = "Number of visitors")
+forecast_ets_vaud <- forecast(ets_vaud, h = 15) 
+
+# Calculate the accuracy of the training set
+metrics_ets_vaud <- ets_vaud %>% accuracy() %>%
+  kable("html", caption = "ETS AAA Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+# Extract and print the AIC
+aic_ets_vaud <- AIC(ets_vaud)
 ```
 
 Employing the ETS "AAA" model, characterized by additive consideration of error, trend, and seasonality components, we forecast number of visitors in canton Vaud for 15 months. The forecast generated by the ETS model appears reasonable, it follows trend and seasonality; however, the wide range of the confidence interval indicates a high level of uncertainty surrounding the predictions.
 
-### ARIMA
+### ARIMA model
 
 The automatic ARIMA (AutoRegressive Integrated Moving Average) model offers a data-driven approach to predict future trends. By automatically selecting the optimal parameters for the ARIMA model, including the order of autoregressive, differencing, and moving average components, this method simplifies the forecasting process while still capturing the underlying patterns in the data. Leveraging historical data, the automatic ARIMA model generates forecasts that account for both trend and seasonality.
 
@@ -390,44 +343,106 @@ The automatic ARIMA (AutoRegressive Integrated Moving Average) model offers a da
 # Convert your time series data to a tsibble object
 vaud_tsibble <- as_tsibble(vaud_ts)
 
-# Fit ARIMA model to the data
-fit_vaud <- vaud_tsibble %>%
-  model(auto_arima = ARIMA(value, stepwise = FALSE, approximation = FALSE))
+# Fit an ARIMA model
+fit_arima_vaud <- vaud_tsibble %>%
+  model(
+    ARIMA_auto = ARIMA(value),
+    ARIMA_dif = ARIMA(value ~ pdq(5, 1, 0) + PDQ(0, 1, 1))
+  )
 
-# Generate forecasts for the next 2 years (24 months)
-forecast_vaud <- fit_vaud %>%
+# Generate forecasts for the next 15 months
+forecast_arima_vaud <- fit_arima_vaud %>%
   forecast(h = 15)
 
-# Plot the forecast
-forecast_vaud %>%
-  autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
+# Plot the forecasts along with the historical data
+plot_arima_vaud <- forecast_arima_vaud %>%
+  autoplot(vaud_tsibble, alpha = 0.3) +
+  labs(title = "ARIMA Forecast of Tourists in Vaud",
+       x = "Date",
+       y = "Number of Tourists") +
+  guides(colour = guide_legend(title = "Forecast"))
 
-#Provide forecast in table
-as.data.frame(forecast_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
-  kable_styling(full_width = FALSE)
+# Calculate the accuracy of the training set
+metrics_arima_vaud <- fit_arima_vaud %>% accuracy() %>%
+  kable("html", caption = "ARIMA Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+# Extract and print the AIC for each model
+aic_arima_vaud <- fit_arima_vaud %>%
+  glance() %>%
+  select(.model, AIC)
 ```
 
-Automatically the model ARIMA(5,0,0)(0,1,1) was chosen. The graph shows that the seasonality observed in the historical data continues to manifest itself in the future forecasts, with recurring seasonal peaks and troughs. This demonstrates the robustness of the ARIMA model Forecasts for the next two years (15 months) are represented by the blue line. The violet bands around the blue line represent the forecast confidence interval, indicating the range of values within which future values are likely to lie with a certain probability. Due to the drop observed in 2020, the trend is showing a slight downward trajectory, however, currently, there are no evident reasons for a decrease in the number of visitors.
+Automatically the model ARIMA(5,0,0)(0,1,1) was chosen. The graph shows that the seasonality observed in the historical data continues to manifest itself in the future forecasts, with recurring seasonal peaks and troughs.  Due to the drop observed in 2020, the trend is showing a slight downward trajectory, however, currently, there are no evident reasons for a decrease in the number of visitors.
 
-To capture the positive trend we use model ARIMA (5,1,0)(0,1,1). Changing models explicitly using a differencing order of 1 in the non-seasonal component provide better flexibility in capturing any underlying trend patterns in the data. This adjustment allows the model to more effectively account for changes in the level of the time series data over time, potentially leading to improved accuracy in forecasting future trends in tourist arrivals in Canton Vaud.
+To capture the positive trend we use model ARIMA (5,1,0)(0,1,1). Changing models explicitly using a differencing order of 1 in the non-seasonal component provide better flexibility in capturing any underlying trend patterns in the data. This adjustment allows the model to more effectively account for changes in the level of the time series data over time. The ARIMA(5,1,0)(0,1,1) model effectively captures both the positive trend and seasonality present in the data. The approach results in forecasts that closely align with observed patterns, leading to a narrow confidence interval enhancing the reliability of predictions for tourist arrivals in canton Vaud.
+
+### TSLM 
+
+In light of the significant drop in tourist numbers caused by the COVID-19 pandemic in 2019, it is crucial to address this anomaly effectively in our forecasting methodologies. The COVID-19 pandemic brought about a paradigm shift in tourist behavior, with travel restrictions and containment measures influencing tourist flows in complex ways. By incorporating the stringency index into our Time Series Linear Regression (TSLM) model, we can effectively capture the influence of these external factors on tourist trends. This approach allows us to recognize the dynamic nature of tourist behavior in response to changing policy environments.
+
+The OxCGRT taken from [Our World In Data](https://datacatalog.med.nyu.edu/dataset/10394) provides data on government responses to COVID-19, including a Stringency Index that measures the severity of lockdown measures. The Stringency Index is calculated based on nine key metrics: School closures, Workplace closures, Cancellation of public events, Restrictions on public gatherings, Closures of public transport, Stay-at-home requirements, International travel controls, etc... Each metric is scored from 0 to 100, with higher scores indicating stricter responses. The overall Stringency Index is the average score of these metrics, reflecting the strictest sub-regional policies if they vary.
+
+In our effort to forecast the number of tourists in Vaud for the next 15 months, we've utilized a Time Series Linear Regression (TSLM) model. This approach allows us to incorporate the stringency index for Switzerland into our forecasting framework effectively. Given our expectation of no restrictions for the next 15 months, we've set the stringency index to 0 for this period. This decision reflects our anticipation of a return to pre-pandemic levels of travel freedom and mobility. By incorporating this assumption into our forecasting model, we aim to provide a more optimistic outlook for tourist numbers in Vaud.
 
 ```{r}
-# Fit ARIMA model with specified parameters
-arima_model <- arima(vaud_ts, order = c(5, 1, 0), seasonal = list(order = c(0, 1, 1), period = 12))
+stringency_df <- read.csv(here("data/stringency_index.csv"))
 
-forecast_a_vaud <- arima_model %>%
-  forecast(h = 15)
+stringency_switzerland <- filter(stringency_df, location == "Switzerland")
 
-# Plot the forecast
-forecast_a_vaud %>%
-  autoplot(data = vaud_tsibble, main = "ARIMA Forecast for Vaud Tourism", ylab = "Number of Tourists")
+stringency_switzerland$date <- as.Date(format(dmy(stringency_switzerland$date), "%Y-%m-01"))
 
-#Provide forecast in table
-as.data.frame(forecast_a_vaud) %>% kable(caption = "Forecast for Vaud Tourism") %>%
-  kable_styling(full_width = FALSE)
+# Aggregate to monthly average, ensuring date format is maintained
+stringency_switzerland <- stringency_switzerland %>%
+  group_by(date) %>%
+  summarize(avg_stringency_index = mean(stringency_index, na.rm = TRUE))
+
+# Rename date column 
+tourism_vaud_total <- tourism_vaud_total %>%
+  rename(date = Date)
+
+# Then merge with Switzerland data
+merged_vaud <- merge(tourism_vaud_total, stringency_switzerland, by = "date", all.x = TRUE)
+
+# Replace NA values in avg_stringency_index with 0 if necessary
+merged_vaud <- merged_vaud %>%
+  mutate(avg_stringency_index = replace_na(avg_stringency_index, 0))
+
+# Convert merged_vaud data frame to tsibble object
+merged_vaud_tsibble <- merged_vaud %>%
+  as_tsibble(index = date)
+
+# Define the model
+Model_vaud_stringency <- merged_vaud_tsibble %>%
+  model(
+    TSLM_vaud_str = TSLM(value ~ trend() + season() + avg_stringency_index)
+  )
+
+# Generate future dates
+future_dates <- seq.Date(from = as.Date("2023-10-01"), by = "month", length.out = 15)
+
+# Create future data with avg_stringency_index set to 0 for 15 months
+future_data <- tibble(
+  date = future_dates,
+  avg_stringency_index = 0
+) %>%
+  as_tsibble(index = date)
+
+# Forecast
+forecast_vaud_stringency <- Model_vaud_stringency %>%
+  forecast(new_data = future_data)
+
+# Calculate the accuracy of the training set
+metrics_tslm_vaud <- Model_vaud_stringency %>% accuracy() %>%
+  kable("html", caption = "TSLM Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+# Extract and print the AIC for the TSLM model
+aic_tslm_vaud <- Model_vaud_stringency %>%
+  glance() %>%
+  filter(.model == "TSLM_vaud_str") %>%
+  pull(AIC)
 ```
-
-The ARIMA(5,1,0)(0,1,1) model effectively captures both the positive trend and seasonality present in the data, resulting in a realistic forecasting scenario. The approach results in forecasts that closely align with observed patterns, leading to a narrow confidence interval enhancing the reliability of predictions for tourist arrivals in canton Vaud.
 
 ## Zurich and Philippines
 
@@ -782,7 +797,63 @@ Overall, ARIMA_auto_stepwise shows the best balance in terms of RMSE and AIC, wh
 
 ## Vaud
 
-Implement model selection metrics comparison,blabla and logic behind it
+In the model selection process, we compare the performance of different forecasting models using various metrics to determine which model provides the most accurate and reliable forecasts for the number of tourists in Vaud.
+```{r}
+# Create the data frame for metrics
+data.frame(
+  model = c("ETS Vaud", "ARIMA_auto", "ARIMA_dif", "TSLM Vaud"),
+  RMSE = c(8790, 8757, 8654, 22053),
+  MAE = c(5328, 5170, 5004, 19487),
+  MAPE = c(9.41, 9.11, 9.04, 26.1),
+  MASE = c(0.458, 0.445, 0.431, 0.553),
+  AIC = c(5339, 4508, 4485, 4521)
+) %>%
+  kable("html", caption = "Model Metrics for Vaud") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+In comparing these models, we prioritize metrics such as AIC, RMSE, MAE and MAPE as lower values indicate better forecasting accuracy. After evaluating the performance of the models, it is evident that ARIMA (5,1,0)(0,1,1) consistently achieves the lowest AIC, RMSE and MAE. Additionally, considering metrics MASE, which provide insights into the relative accuracy of the models compared to a baseline, ARIMA (5,1,0)(0,1,1) emerges as the most favorable choice. Therefore, based on these criteria, ARIMA (5,1,0)(0,1,1) is the preferred model for forecasting the number of tourists in Vaud. A MAPE value of 9.04 means that, on average, the forecasts produced by the chosen model, ARIMA (5,1,0)(0,1,1), deviate from the actual values by approximately 9.04%.This suggests that the model is performing reasonably well in capturing the underlying patterns and trends in the data, but there is still room for improvement.
+
+```{r}
+# Filter forecasts for ARIMA_dif model
+forecast_arima_dif <- forecast_arima_vaud %>%
+  filter(.model == "ARIMA_dif")
+
+# Extract month and year from the index
+forecast_arima_dif$Month <- substr(forecast_arima_dif$index, 6, 8)
+forecast_arima_dif$Year <- substr(forecast_arima_dif$index, 1, 4)
+
+# Create a Date column in "Year Month" format
+forecast_arima_dif$Date <- paste(forecast_arima_dif$Year, forecast_arima_dif$Month)
+
+# Remove Month and Year columns if needed
+forecast_arima_dif <- subset(forecast_arima_dif, select = -c(Month, Year))
+
+# Extract mean and variance from the "value" column
+mean_variance <- str_extract_all(forecast_arima_dif$value, "[0-9.]+")
+
+# Extract mean and variance values
+mean_values <- as.numeric(sapply(mean_variance, function(x) x[1]))
+variance_values <- as.numeric(sapply(mean_variance, function(x) x[2]))
+
+# Calculate standard deviations
+standard_deviations <- sqrt(variance_values)
+
+# Calculate lower and upper confidence intervals
+forecast_arima_dif$Lower_CI <- mean_values - 1.96 * standard_deviations
+forecast_arima_dif$Upper_CI <- mean_values + 1.96 * standard_deviations
+
+# Create reactable table with selected columns
+forecast_vaud_finaltable <- reactable(
+  forecast_arima_dif[, c("Date", ".mean", "Lower_CI", "Upper_CI")],
+  columns = list(
+    Date = colDef(name = "Date"),
+    Forecast_value = colDef(name = ".mean"),
+    Lower_CI = colDef(name = "Lower CI"),
+    Upper_CI = colDef(name = "Upper CI")
+  ),
+  defaultColDef = colDef(format = colFormat(digits = 2))
+)
+```
 
 ## Zurich and Philippines
 
@@ -892,9 +963,56 @@ reactable(head(tourism_data_no_total, 1000),
 
 ## Vaud - Tourism Data
 ```{r}
-table_vaud
+tourism_vaud
 ```
 
+## VD - Plot visitors from countries
+```{r vaud all plot}
+# Create the ggplot object
+plot_vaud <- tourism_vaud %>% 
+  filter(Herkunftsland != 'Herkunftsland - Total') %>%
+  ggplot(aes(x = Date, y = value, group = Herkunftsland, color = Herkunftsland,
+             text = paste("Country:", Herkunftsland, "Trips:", value))) +  # Added text for tooltip
+  geom_line(show.legend = FALSE) + 
+  scale_color_viridis_d() +  # Use viridis color palette
+  labs(title = "Number of visitors from Each Country to Vaud",
+       x = "Date",
+       y = "Number of Trips") +
+  theme_minimal()
+
+# Convert to an interactive plotly object with specified width and height
+interactive_plot <- ggplotly(plot_vaud, tooltip = "text", width = 600, height = 400)
+
+
+# Adjust plotly settings 
+interactive_plot %>%
+  layout(
+    margin = list(l = 60, r = 60, b = 60, t = 80),
+    showlegend = FALSE # Remove legend
+  )
+```
+
+## VD - ETS forecast
+
+```{r ETS Forecast}
+forecast_ets_vaud <- forecast(ets_vaud, h = 15) %>% plot(main = "Forecast of visitors in Vaud", xlab = "Date", ylab = "Number of visitors")
+```
+
+## VD - ARIMA forecast
+
+```{r ARIMA Forecast}
+plot_arima_vaud
+```
+
+## VD - TSLM forecast
+
+```{r TSLM Forecast}
+forecast_vaud_stringency %>%
+  autoplot(merged_vaud_tsibble) +
+  labs(title = "Tourist Forecast for Canton Vaud with Stringency Index = 0", 
+       y = "Number of Tourists", x = "Date") +
+  guides(colour = guide_legend(title = "Forecast"))
+```
 ## ZH - Tourism Data
 
 We filtered the "Kanton" column to keep only the canton of Zurich.
