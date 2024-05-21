@@ -1006,8 +1006,6 @@ We apply three ARIMA models and determine which one gives us the best accury in 
 -   An ARIMA_auto_seasonal, which works like the ARIMA_auto but takes into account the monthly seasonality of our data.
 -   ARIMA_auto_stepwise, which performs an exhaustive search over all possible combinations of parameters by disabling the stepwise and approximation options. It increases the accuracy of the model and do not take seasonal components into account.
 
-NOTE A REFORMULER PLUS PETIT Reasons to Turn Off Stepwise and Approximation Accuracy Over Speed: If computational resources and time are not a constraint, turning off these options can lead to more accurate and reliable model selection and parameter estimation. Better Model Selection: An exhaustive search (with stepwise = FALSE) and exact estimation (with approximation = FALSE) increase the chances of identifying the true underlying model, which can improve forecast accuracy. Complex Data: For datasets with complex patterns or when high accuracy is critical, the benefits of thorough model exploration and exact estimation outweigh the increased computational cost.
-
 ```{r}
 plot_arima_zh
 ```
